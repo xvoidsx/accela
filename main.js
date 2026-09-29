@@ -106,6 +106,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: url === 'accela://settings'
+        ? path.join(__dirname, 'settings-preload.js')
+        : path.join(__dirname, 'preload.js'),
       preload: path.join(__dirname, 'preload.js'),
     },
     autoHideMenuBar: true,
@@ -187,6 +190,9 @@ function createTab(url) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: url === 'accela://settings'
+        ? path.join(__dirname, 'settings-preload.js')
+        : path.join(__dirname, 'preload.js'),
       // Explicit font defaults — generic families (monospace, etc.) must resolve
       // or sites falling back from webfonts render invisible text
       defaultFontFamily: {
@@ -289,76 +295,7 @@ function createTab(url) {
 
 function loadAccelaPage(view, accelaUrl) {
   if (accelaUrl === 'accela://settings') {
-    const s = loadSettings();
-    const engines = Object.entries(SEARCH_ENGINES).map(([id, e]) =>
-      `<option value="${id}"${id === s.searchEngine ? ' selected' : ''}>${e.name}</option>`).join('');
-    const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Settings — Accela</title>
-<style>
-  body { font-family: 'Noto Sans', system-ui, sans-serif; background: #0d0d14; color: #fff; margin: 0; padding: 40px; }
-  h1 { color: #ff2d95; font-size: 28px; margin-bottom: 8px; }
-  .sub { color: #888; margin-bottom: 32px; }
-  .section { background: #1c1c26; border: 1px solid #3a3a48; border-radius: 16px; padding: 24px; margin-bottom: 20px; max-width: 600px; }
-  .section h2 { color: #00ffff; font-size: 18px; margin: 0 0 16px; }
-  .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #23232e; }
-  .row:last-child { border: none; }
-  select, input[type=text] { background: #0d0d14; color: #fff; border: 1px solid #3a3a48; border-radius: 8px; padding: 10px; font-size: 14px; }
-  .toggle { width: 48px; height: 26px; background: #3a3a48; border-radius: 13px; position: relative; cursor: pointer; border: none; }
-  .toggle.on { background: #ff2d95; }
-  .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
-  .toggle.on::after { left: 25px; }
-  .desc { color: #888; font-size: 13px; margin-top: 4px; }
-</style></head>
-<body>
-  <h1>Settings</h1>
-  <div class="sub">Accela ${require('./package.json').version}</div>
-
-  <div class="section">
-    <h2>Search</h2>
-    <div class="row">
-      <div><div>Search engine</div><div class="desc">Used for address bar searches</div></div>
-      <select id="se">${engines}</select>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Appearance</h2>
-    <div class="row">
-      <div><div>Vertical tabs</div><div class="desc">Show tabs in a sidebar instead of on top</div></div>
-      <button class="toggle${s.verticalTabs ? ' on' : ''}" id="vt"></button>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Privacy</h2>
-    <div class="row">
-      <div><div>blackice adblocking</div><div class="desc">Block ads and trackers natively</div></div>
-      <button class="toggle on" id="bi"></button>
-    </div>
-    <div class="row">
-      <div><div>Blocked this session</div><div class="desc">Requests stopped by blackice</div></div>
-      <div id="blocked" style="color:#39ff14;font-size:20px;font-weight:bold;">0</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>About</h2>
-    <div class="row"><div>Version</div><div>${require('./package.json').version}</div></div>
-    <div class="row"><div>Chromium</div><div>Electron ${process.versions.electron}</div></div>
-    <div class="row"><div>User agent</div><div style="font-size:11px;max-width:300px;word-break:break-all;">Chrome/155 spoof</div></div>
-  </div>
-
-<script>
-  document.getElementById('se').addEventListener('change', e => {
-    fetch('accela://api/set-engine/' + e.target.value);
-  });
-  document.getElementById('vt').addEventListener('click', e => {
-    e.target.classList.toggle('on');
-    fetch('accela://api/toggle-vertical');
-  });
-</script>
-</body></html>`;
-    view.webContents.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+    view.webContents.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
     return;
   }
   if (accelaUrl === 'accela://newtab') {

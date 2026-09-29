@@ -7,7 +7,8 @@
       "renderer/**/*",
       "blackice/**/*",
       "icons/**/*",
-      "package.json"
+      "package.json",
+      "settings-preload.js"
     ],
     "linux": {
       "category": "Network",
@@ -40,5 +41,5 @@
     "build-deb": "electron-builder --linux deb",
     "start": "electron ."
   },
-  "version": "0.8.0"
+  "version": "0.8.1"
 }

@@ -11,6 +11,7 @@ function renderTabs() {
   for (const [id, t] of tabs) {
     const el = document.createElement('div');
     el.className = 'tab' + (id === activeTabId ? ' active' : '');
+    el.dataset.id = id;
     el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
     el.querySelector('.tab-title').parentElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('tab-close')) return;
@@ -324,6 +325,33 @@ initVerticalTabs();
 // Vertical tabs changed from native menu
 window.accela.onVerticalChanged((vt) => {
   document.body.classList.toggle('vertical-tabs', vt);
+});
+
+// Bangs visual feedback: typing !yt shows "YouTube: "
+const BANG_NAMES = {
+  '!radio': 'navi radio', '!nl': 'neighborli', '!apps': 'naviApps', '!wired': 'navi',
+  '!xvoidsx': 'xvoidsx', '!yt': 'YouTube', '!gh': 'GitHub', '!w': 'Wikipedia',
+  '!so': 'Stack Overflow', '!mdn': 'MDN', '!npm': 'npm', '!g': 'Google',
+  '!ddg': 'DuckDuckGo', '!brave': 'Brave Search',
+};
+const addressBar = document.getElementById('address-bar');
+let bangIndicator = null;
+addressBar.addEventListener('input', () => {
+  const val = addressBar.value.trim().split(/\s+/)[0].toLowerCase();
+  if (BANG_NAMES[val]) {
+    if (!bangIndicator) {
+      bangIndicator = document.createElement('div');
+      bangIndicator.id = 'bang-indicator';
+      addressBar.parentElement.insertBefore(bangIndicator, addressBar);
+    }
+    bangIndicator.textContent = BANG_NAMES[val] + ':';
+    bangIndicator.style.display = 'block';
+    bangIndicator.classList.remove('flash');
+    void bangIndicator.offsetWidth; // retrigger animation
+    bangIndicator.classList.add('flash');
+  } else if (bangIndicator) {
+    bangIndicator.style.display = 'none';
+  }
 });
 
 // Tab hover tooltip (title + URL preview)
