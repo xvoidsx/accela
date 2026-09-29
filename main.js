@@ -142,7 +142,7 @@ function createTab(url) {
     },
   });
   // Masquerade as Chrome for site compatibility
-  view.webContents.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36");
+  view.webContents.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.12 Safari/537.36");
 
   // Handle accela:// protocol internally
   view.webContents.on('will-navigate', (e, navUrl) => {
