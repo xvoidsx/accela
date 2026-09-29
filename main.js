@@ -471,6 +471,8 @@ ipcMain.handle('navigate', (e, { tabId, url }) => {
       target = resolveBang(target) || searchUrl(target);
     }
   }
+  t.url = target;  // Update tab URL immediately (bangs resolve here)
+  sendToChrome('tab-updated', { tabId: tabId || activeTabId, url: target });
   t.view.webContents.loadURL(target);
 });
 ipcMain.handle('go-back', () => {

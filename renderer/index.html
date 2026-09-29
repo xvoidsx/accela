@@ -8,11 +8,13 @@
 <body>
 <div id="chrome">
   <!-- Tab strip -->
-  <button id="collapse-tabs-btn" title="Collapse sidebar" style="display:none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <div id="tab-strip">
+  <div id="tab-strip">
+    <button id="collapse-tabs-btn" title="Collapse sidebar" style="display:none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div id="tabs"></div>
     <button id="new-tab-btn" title="New tab"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
   </div>
+  <!-- Main column (toolbar + content) -->
+  <div id="main-column">
   <!-- Toolbar -->
   <div id="toolbar">
     <button id="back-btn" title="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
@@ -31,6 +33,7 @@
     <button id="untile-btn">Untile</button>
   </div>
   <div id="bookmark-bar"></div>
+  </div><!-- /main-column -->
 </div>
   <div id="site-info-popup" class="popup" style="display:none;"></div>
   <div id="settings-popup" class="popup" style="display:none;"></div>

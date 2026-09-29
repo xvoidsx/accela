@@ -381,6 +381,10 @@ window.accela.onVerticalChanged((v) => {
   document.getElementById('collapse-tabs-btn').style.display = v ? 'block' : 'none';
 });
 
+// Tab hover tooltip - DISABLED: custom div gets clipped by WebContentsView
+// Using native title attributes instead (set in renderTabs)
+// TODO: Revisit with proper positioning fully within chrome area
+if (false) { // Disabled
 // Tab hover tooltip (title + URL preview)
 let tabTooltip = null;
 let tooltipTimer = null;
@@ -416,6 +420,7 @@ document.getElementById('tabs').addEventListener('mouseout', (e) => {
   clearTimeout(tooltipTimer);
   if (tabTooltip) tabTooltip.style.display = 'none';
 });
+} // End disabled tooltip
 
 // Init
 renderBookmarks();
