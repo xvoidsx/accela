@@ -13,4 +13,9 @@ contextBridge.exposeInMainWorld('accela', {
   onTabClosed: (cb) => ipcRenderer.on('tab-closed', (e, d) => cb(d)),
   onTabActivated: (cb) => ipcRenderer.on('tab-activated', (e, d) => cb(d)),
   onTabUpdated: (cb) => ipcRenderer.on('tab-updated', (e, d) => cb(d)),
+  onFocusAddressBar: (cb) => ipcRenderer.on('focus-address-bar', () => cb()),
+  getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
+  addBookmark: (title, url) => ipcRenderer.invoke('add-bookmark', { title, url }),
+  removeBookmark: (url) => ipcRenderer.invoke('remove-bookmark', url),
+  toggleDevTools: () => ipcRenderer.invoke('toggle-devtools'),
 });

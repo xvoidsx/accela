@@ -1,7 +1,7 @@
 // Accela main process — Electron browser shell
 // Manages windows, tabs (WebContentsView), blackice adblocking, navigation.
 
-const { app, BrowserWindow, WebContentsView, ipcMain, session } = require('electron');
+const { app, BrowserWindow, WebContentsView, ipcMain, session, Menu, globalShortcut } = require('electron');
 const path = require('path');
 const { initBlackice } = require('./blackice/engine');
 
@@ -10,7 +10,20 @@ const tabs = new Map(); // tabId -> { view, url, title }
 let activeTabId = null;
 let tabCounter = 0;
 
-const CHROME_HEIGHT = 96; // tab strip + toolbar
+const CHROME_HEIGHT = 100; // tab strip + toolbar (measured)
+
+// Bookmarks storage
+const fs = require('fs');
+const bookmarksPath = path.join(app.getPath('userData'), 'bookmarks.json');
+function loadBookmarks() {
+  try {
+    if (fs.existsSync(bookmarksPath)) return JSON.parse(fs.readFileSync(bookmarksPath, 'utf8'));
+  } catch {}
+  return [];
+}
+function saveBookmarks(bm) {
+  try { fs.writeFileSync(bookmarksPath, JSON.stringify(bm, null, 2)); } catch {}
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -35,7 +48,61 @@ function createWindow() {
   // Create the first tab
   createTab('accela://newtab');
 
-  mainWindow.on('closed', () => { mainWindow = null; });
+  // Application menu
+  const menu = Menu.buildFromTemplate([
+    { label: 'File', submenu: [
+      { label: 'New Tab', accelerator: 'CmdOrCtrl+T', click: () => createTab('accela://newtab') },
+      { label: 'Close Tab', accelerator: 'CmdOrCtrl+W', click: () => { if (activeTabId) closeTab(activeTabId); } },
+      { type: 'separator' },
+      { label: 'Quit', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() },
+    ]},
+    { label: 'View', submenu: [
+      { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => { const t = tabs.get(activeTabId); if (t) t.view.webContents.reload(); } },
+      { label: 'Toggle DevTools', accelerator: 'CmdOrCtrl+Shift+I', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t) t.view.webContents.toggleDevTools();
+      }},
+      { type: 'separator' },
+      { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t) t.view.webContents.setZoomLevel(t.view.webContents.getZoomLevel() + 0.5);
+      }},
+      { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t) t.view.webContents.setZoomLevel(t.view.webContents.getZoomLevel() - 0.5);
+      }},
+      { label: 'Reset Zoom', accelerator: 'CmdOrCtrl+0', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t) t.view.webContents.setZoomLevel(0);
+      }},
+    ]},
+    { label: 'History', submenu: [
+      { label: 'Back', accelerator: 'Alt+Left', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t && t.view.webContents.canGoBack()) t.view.webContents.goBack();
+      }},
+      { label: 'Forward', accelerator: 'Alt+Right', click: () => {
+        const t = tabs.get(activeTabId);
+        if (t && t.view.webContents.canGoForward()) t.view.webContents.goForward();
+      }},
+    ]},
+  ]);
+  Menu.setApplicationMenu(menu);
+  mainWindow.setMenuBarVisibility(false); // hidden, Alt shows it
+
+  // Global shortcuts for address bar focus
+  globalShortcut.register('CmdOrCtrl+L', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('focus-address-bar');
+    }
+  });
+
+  // Layout on resize
+  mainWindow.on('resize', layoutViews);
+  mainWindow.on('closed', () => {
+    globalShortcut.unregisterAll();
+    mainWindow = null;
+  });
 }
 
 function createTab(url) {
@@ -126,15 +193,11 @@ function closeTab(tabId) {
 }
 
 function layoutViews() {
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
   const bounds = mainWindow.getContentBounds();
+  const height = Math.max(0, bounds.height - CHROME_HEIGHT);
   for (const [, t] of tabs) {
-    t.view.setBounds({
-      x: 0,
-      y: CHROME_HEIGHT,
-      width: bounds.width,
-      height: bounds.height - CHROME_HEIGHT,
-    });
+    t.view.setBounds({ x: 0, y: CHROME_HEIGHT, width: bounds.width, height });
   }
 }
 
@@ -177,6 +240,24 @@ ipcMain.handle('go-forward', () => {
 ipcMain.handle('reload', () => {
   const t = tabs.get(activeTabId);
   if (t) t.view.webContents.reload();
+});
+ipcMain.handle('get-bookmarks', () => loadBookmarks());
+ipcMain.handle('add-bookmark', (e, { title, url }) => {
+  const bm = loadBookmarks();
+  if (!bm.find(b => b.url === url)) {
+    bm.push({ title, url, added: Date.now() });
+    saveBookmarks(bm);
+  }
+  return bm;
+});
+ipcMain.handle('remove-bookmark', (e, url) => {
+  const bm = loadBookmarks().filter(b => b.url !== url);
+  saveBookmarks(bm);
+  return bm;
+});
+ipcMain.handle('toggle-devtools', () => {
+  const t = tabs.get(activeTabId);
+  if (t) t.view.webContents.toggleDevTools();
 });
 ipcMain.handle('get-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({ tabId: id, url: t.url, title: t.title, active: id === activeTabId }));
