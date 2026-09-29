@@ -1,0 +1,20 @@
+name: build-deb
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx electron-builder --linux deb
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/accela_*_amd64.deb
+          name: ${{ github.ref_name }}
