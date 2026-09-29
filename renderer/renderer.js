@@ -477,8 +477,157 @@ document.getElementById('tabs').addEventListener('mouseout', (e) => {
 });
 } // End disabled tooltip
 
+// Sidebar panel (bookmarks/history)
+let panelMode = null;
+function showPanel(mode) {
+  panelMode = mode;
+  const panel = document.getElementById('sidebar-panel');
+  const title = document.getElementById('panel-title');
+  const content = document.getElementById('panel-content');
+  panel.style.display = 'flex';
+  title.textContent = mode === 'bookmarks' ? 'Bookmarks' : 'History';
+  renderPanelContent();
+}
+function hidePanel() {
+  document.getElementById('sidebar-panel').style.display = 'none';
+  panelMode = null;
+}
+async function renderPanelContent() {
+  const content = document.getElementById('panel-content');
+  if (panelMode === 'bookmarks') {
+    const bms = await window.accela.getBookmarks();
+    content.innerHTML = bms.map((b, i) => `
+      <div class="panel-item" data-url="${escapeHtml(b.url)}">
+        <span class="title">${escapeHtml(b.title)}</span>
+        <span class="url">${escapeHtml(b.url)}</span>
+      </div>
+    `).join('') || '<div style="color:#666;padding:20px;text-align:center;">No bookmarks yet</div>';
+  } else if (panelMode === 'history') {
+    const hist = await window.accela.getHistory();
+    content.innerHTML = hist.slice(0, 100).map(h => `
+      <div class="panel-item" data-url="${escapeHtml(h.url)}">
+        <span class="title">${escapeHtml(h.title)}</span>
+        <span class="url">${escapeHtml(new Date(h.time).toLocaleString())}</span>
+      </div>
+    `).join('') || '<div style="color:#666;padding:20px;text-align:center;">No history yet</div>';
+  }
+  content.querySelectorAll('.panel-item').forEach(el => {
+    el.addEventListener('click', () => {
+      window.accela.navigate(activeTabId, el.dataset.url);
+      hidePanel();
+    });
+  });
+}
+document.getElementById('bookmarks-btn').addEventListener('click', () => showPanel('bookmarks'));
+document.getElementById('history-btn').addEventListener('click', () => showPanel('history'));
+document.getElementById('panel-close').addEventListener('click', hidePanel);
+
+// Omnibar suggestions
+let suggestionsEl = null;
+let selectedSuggestion = -1;
+function setupOmnibar() {
+  const wrapper = addrBar.parentElement;
+  wrapper.style.position = 'relative';
+  suggestionsEl = document.createElement('div');
+  suggestionsEl.id = 'omnibar-suggestions';
+  suggestionsEl.style.display = 'none';
+  wrapper.appendChild(suggestionsEl);
+  
+  addrBar.addEventListener('input', async () => {
+    const q = addrBar.value.trim();
+    if (q.length < 2) { suggestionsEl.style.display = 'none'; return; }
+    const hist = await window.accela.getHistory();
+    const bms = await window.accela.getBookmarks();
+    const matches = [];
+    // History matches
+    for (const h of hist.slice(0, 50)) {
+      if (h.url.includes(q) || h.title.toLowerCase().includes(q.toLowerCase())) {
+        matches.push({ type: 'history', title: h.title, url: h.url });
+        if (matches.length >= 5) break;
+      }
+    }
+    // Bookmark matches
+    for (const b of bms) {
+      if (b.url.includes(q) || b.title.toLowerCase().includes(q.toLowerCase())) {
+        matches.push({ type: 'bookmark', title: b.title, url: b.url });
+        if (matches.length >= 8) break;
+      }
+    }
+    if (matches.length === 0) { suggestionsEl.style.display = 'none'; return; }
+    suggestionsEl.innerHTML = matches.map((m, i) => `
+      <div class="suggestion" data-url="${escapeHtml(m.url)}" data-idx="${i}">
+        <span class="icon">${m.type === 'history' ? '🕐' : '⭐'}</span>
+        <span class="text">${escapeHtml(m.title)}</span>
+        <span class="type">${m.type}</span>
+      </div>
+    `).join('');
+    suggestionsEl.style.display = 'block';
+    selectedSuggestion = -1;
+    suggestionsEl.querySelectorAll('.suggestion').forEach(el => {
+      el.addEventListener('click', () => {
+        window.accela.navigate(activeTabId, el.dataset.url);
+        suggestionsEl.style.display = 'none';
+        addrBar.blur();
+      });
+    });
+  });
+  addrBar.addEventListener('keydown', (e) => {
+    const items = suggestionsEl.querySelectorAll('.suggestion');
+    if (suggestionsEl.style.display === 'none' || items.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedSuggestion = Math.min(selectedSuggestion + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedSuggestion = Math.max(selectedSuggestion - 1, -1);
+    } else if (e.key === 'Enter' && selectedSuggestion >= 0) {
+      e.preventDefault();
+      window.accela.navigate(activeTabId, items[selectedSuggestion].dataset.url);
+      suggestionsEl.style.display = 'none';
+      addrBar.blur();
+      return;
+    } else return;
+    items.forEach((el, i) => el.classList.toggle('selected', i === selectedSuggestion));
+  });
+  addrBar.addEventListener('blur', () => {
+    setTimeout(() => suggestionsEl.style.display = 'none', 200);
+  });
+}
+
+// Sidebar resize (draggable)
+function setupSidebarResize() {
+  const tabStrip = document.getElementById('tab-strip');
+  const handle = document.createElement('div');
+  handle.id = 'sidebar-resize';
+  tabStrip.appendChild(handle);
+  
+  let resizing = false;
+  let startX = 0;
+  let startWidth = 0;
+  
+  handle.addEventListener('mousedown', (e) => {
+    if (!document.body.classList.contains('vertical-tabs')) return;
+    resizing = true;
+    startX = e.clientX;
+    startWidth = tabStrip.offsetWidth;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!resizing) return;
+    const newWidth = Math.max(56, Math.min(400, startWidth + (e.clientX - startX)));
+    tabStrip.style.width = newWidth + 'px';
+    tabStrip.style.minWidth = newWidth + 'px';
+    tabStrip.style.maxWidth = newWidth + 'px';
+    // Notify main to update layout
+    window.accela.setSidebarWidth(newWidth);
+  });
+  document.addEventListener('mouseup', () => { resizing = false; });
+}
+
 // Init
 renderBookmarks();
+setupOmnibar();
+setupSidebarResize();
 window.accela.getTabs().then(list => {
   list.forEach(t => tabs.set(t.id, { url: t.url, title: t.title, pinned: !!t.pinned }));
   const active = list.find(t => t.active);

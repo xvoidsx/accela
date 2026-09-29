@@ -11,12 +11,32 @@ let activeTabId = null;
 let tabCounter = 0;
 let tiledTabIds = null; // [id1, id2] when tiling, null otherwise
 let verticalTabs = false;
+let sidebarWidth = 220;
 
 const CHROME_HEIGHT = 100; // tab strip + toolbar (measured)
 
 // Bookmarks storage
 const fs = require('fs');
 const bookmarksPath = path.join(app.getPath('userData'), 'bookmarks.json');
+const historyPath = path.join(app.getPath('userData'), 'history.json');
+function loadHistory() {
+  try {
+    if (fs.existsSync(historyPath)) return JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+  } catch {}
+  return [];
+}
+function saveHistory(h) {
+  try { fs.writeFileSync(historyPath, JSON.stringify(h.slice(0, 1000), null, 2)); } catch {}
+}
+let history = loadHistory();
+function addToHistory(url, title) {
+  if (!url || url.startsWith('accela://')) return;
+  // Remove existing entry for this URL
+  history = history.filter(h => h.url !== url);
+  history.unshift({ url, title: title || url, time: Date.now() });
+  if (history.length > 1000) history = history.slice(0, 1000);
+  saveHistory(history);
+}
 function loadBookmarks() {
   try {
     if (fs.existsSync(bookmarksPath)) return JSON.parse(fs.readFileSync(bookmarksPath, 'utf8'));
@@ -358,7 +378,7 @@ function closeTab(tabId) {
 function layoutViews() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const bounds = mainWindow.getContentBounds();
-  const chromeWidth = verticalTabs ? 220 : 0; // vertical tab strip width
+  const chromeWidth = verticalTabs ? sidebarWidth : 0; // vertical tab strip width
   const chromeTop = verticalTabs ? 48 : CHROME_HEIGHT; // toolbar height when vertical
   const availWidth = bounds.width - chromeWidth;
   const availHeight = Math.max(0, bounds.height - chromeTop);
@@ -474,6 +494,10 @@ ipcMain.handle('navigate', (e, { tabId, url }) => {
   t.url = target;  // Update tab URL immediately (bangs resolve here)
   sendToChrome('tab-updated', { tabId: tabId || activeTabId, url: target });
   t.view.webContents.loadURL(target);
+  // Add to history when page loads
+  t.view.webContents.once('did-finish-load', () => {
+    addToHistory(target, t.title);
+  });
 });
 ipcMain.handle('go-back', () => {
   const t = tabs.get(activeTabId);
@@ -610,6 +634,8 @@ ipcMain.handle('move-tab', (e, { draggedId, targetId }) => {
   for (const [id, tab] of entries) tabs.set(id, tab);
   sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: !!tb.pinned, favicon: tb.favicon || null, active: id === activeTabId })));
 });
+ipcMain.handle('get-history', () => history);
+ipcMain.handle('set-sidebar-width', (e, w) => { sidebarWidth = w; layoutViews(); });
 ipcMain.handle('get-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, pinned: !!t.pinned, active: id === activeTabId }));
 });

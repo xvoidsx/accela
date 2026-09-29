@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('accela', {
   onTabUpdated: (cb) => ipcRenderer.on('tab-updated', (e, d) => cb(d)),
   onFocusAddressBar: (cb) => ipcRenderer.on('focus-address-bar', () => cb()),
   getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
+  getHistory: () => ipcRenderer.invoke('get-history'),
+  setSidebarWidth: (w) => ipcRenderer.invoke('set-sidebar-width', w),
   addBookmark: (title, url) => ipcRenderer.invoke('add-bookmark', { title, url }),
   removeBookmark: (url) => ipcRenderer.invoke('remove-bookmark', url),
   toggleDevTools: () => ipcRenderer.invoke('toggle-devtools'),

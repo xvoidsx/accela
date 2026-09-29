@@ -463,3 +463,160 @@ button:hover {
   transform: translateY(-1px);
   transition: transform 0.15s ease;
 }
+
+/* ===== AESTHETIC RELEASE: Neon Waybar Glow ===== */
+
+/* Active tab glow (like waybar!) */
+.tab.active {
+  background: linear-gradient(135deg, rgba(255,45,149,0.3), rgba(0,255,255,0.2)) !important;
+  border: 1px solid #ff2d95 !important;
+  box-shadow: 0 0 12px rgba(255, 45, 149, 0.6),
+              0 0 24px rgba(255, 45, 149, 0.3),
+              inset 0 0 8px rgba(255, 45, 149, 0.2) !important;
+  animation: tabGlow 2s ease-in-out infinite alternate;
+}
+@keyframes tabGlow {
+  from { box-shadow: 0 0 8px rgba(255, 45, 149, 0.5), 0 0 16px rgba(255, 45, 149, 0.25); }
+  to { box-shadow: 0 0 14px rgba(255, 45, 149, 0.8), 0 0 28px rgba(0, 255, 255, 0.4); }
+}
+
+/* Toolbar neon accents */
+#toolbar {
+  background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+  border-bottom: 1px solid rgba(255, 45, 149, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+#address-bar {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 45, 149, 0.4);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5),
+              0 0 8px rgba(255, 45, 149, 0.2);
+  transition: all 0.2s ease;
+}
+#address-bar:focus {
+  border-color: #ff2d95;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5),
+              0 0 16px rgba(255, 45, 149, 0.5);
+  outline: none;
+}
+
+/* Sidebar panel (bookmarks/history) */
+#sidebar-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 320px;
+  height: 100vh;
+  background: rgba(18, 18, 26, 0.98);
+  border-left: 1px solid rgba(255, 45, 149, 0.4);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+}
+#panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 45, 149, 0.3);
+  font-weight: bold;
+  color: #ff2d95;
+  font-size: 16px;
+}
+#panel-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+}
+#panel-close:hover { color: #ff2d95; }
+#panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.panel-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: background 0.15s ease;
+}
+.panel-item:hover {
+  background: rgba(255, 45, 149, 0.15);
+}
+.panel-item .favicon {
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+}
+.panel-item .title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+.panel-item .url {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* Omnibar suggestions */
+#omnibar-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(18, 18, 26, 0.98);
+  border: 1px solid rgba(255, 45, 149, 0.4);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 1001;
+  max-height: 400px;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+}
+.suggestion {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.suggestion:hover, .suggestion.selected {
+  background: rgba(255, 45, 149, 0.2);
+}
+.suggestion .icon { margin-right: 12px; color: #888; }
+.suggestion .text { flex: 1; }
+.suggestion .type {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Sidebar resize handle */
+#sidebar-resize {
+  width: 4px;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+#sidebar-resize:hover {
+  background: rgba(255, 45, 149, 0.5);
+}
+body.vertical-tabs #tab-strip {
+  position: relative;
+}
