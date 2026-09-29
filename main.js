@@ -120,11 +120,10 @@ function createWindow() {
   globalShortcut.register('CmdOrCtrl+L', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.focus();
-      // Blur the page view so keystrokes go to our UI, not the page
-      const t = tabs.get(activeTabId);
-      if (t) t.view.webContents.blur();
       mainWindow.webContents.focus();
-      setTimeout(() => mainWindow.webContents.send('focus-address-bar'), 100);
+      setTimeout(() => {
+        if (!mainWindow.isDestroyed()) mainWindow.webContents.send('focus-address-bar');
+      }, 100);
     }
   });
 
@@ -156,6 +155,32 @@ function createTab(url) {
       defaultMonospaceFontSize: 13,
     },
   });
+  // Right-click context menu (Chrome-like)
+  view.webContents.on('context-menu', (event, params) => {
+    const menu = Menu.buildFromTemplate([
+      ...(params.linkURL ? [
+        { label: 'Open link in new tab', click: () => createTab(params.linkURL) },
+        { label: 'Copy link address', click: () => { require('electron').clipboard.writeText(params.linkURL); } },
+        { type: 'separator' },
+      ] : []),
+      ...(params.hasImageContents ? [
+        { label: 'Copy image address', click: () => { require('electron').clipboard.writeText(params.srcURL); } },
+        { type: 'separator' },
+      ] : []),
+      ...(params.selectionText ? [
+        { label: `Search for "${params.selectionText.slice(0, 30)}"`, click: () => createTab(searchUrl(params.selectionText)) },
+        { label: 'Copy', role: 'copy' },
+        { type: 'separator' },
+      ] : []),
+      { label: 'Back', click: () => { const t = tabs.get(activeTabId); if (t && t.view.webContents.canGoBack()) t.view.webContents.goBack(); } },
+      { label: 'Forward', click: () => { const t = tabs.get(activeTabId); if (t && t.view.webContents.canGoForward()) t.view.webContents.goForward(); } },
+      { label: 'Reload', click: () => { const t = tabs.get(activeTabId); if (t) t.view.webContents.reload(); } },
+      { type: 'separator' },
+      { label: 'Inspect', click: () => { const t = tabs.get(activeTabId); if (t) t.view.webContents.inspectElement(params.x, params.y); } },
+    ]);
+    menu.popup();
+  });
+
   // Masquerade as Chrome for site compatibility
   view.webContents.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.12 Safari/537.36");
 
@@ -171,6 +196,12 @@ function createTab(url) {
     const t = tabs.get(tabId);
     if (t) t.url = navUrl;
     sendToChrome('tab-updated', { tabId, url: navUrl });
+  });
+  view.webContents.on('did-start-loading', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('page-loading', true);
+  });
+  view.webContents.on('did-stop-loading', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('page-loading', false);
   });
   view.webContents.on('page-title-updated', (e, title) => {
     const t = tabs.get(tabId);

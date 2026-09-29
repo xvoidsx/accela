@@ -11,7 +11,7 @@ function renderTabs() {
   for (const [id, t] of tabs) {
     const el = document.createElement('div');
     el.className = 'tab' + (id === activeTabId ? ' active' : '');
-    el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close">×</button>`;
+    el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
     el.querySelector('.tab-title').parentElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('tab-close')) return;
       window.accela.switchTab(id);
@@ -176,8 +176,8 @@ settingsBtn.addEventListener('click', async (e) => {
 
 // Close popups on outside click
 document.addEventListener('click', (e) => {
-  if (!siteInfoPopup.contains(e.target) && e.target !== siteInfoBtn) siteInfoPopup.style.display = 'none';
-  if (!settingsPopup.contains(e.target) && e.target !== settingsBtn) settingsPopup.style.display = 'none';
+  if (!siteInfoPopup.contains(e.target) && !siteInfoBtn.contains(e.target)) siteInfoPopup.style.display = 'none';
+  if (!settingsPopup.contains(e.target) && !settingsBtn.contains(e.target)) settingsPopup.style.display = 'none';
 });
 
 // Update site info icon on tab change
@@ -194,6 +194,11 @@ renderTabs = async function() {
   }
 };
 
+
+// Reload animation
+window.accela.onPageLoading((loading) => {
+  document.getElementById('reload-btn').classList.toggle('loading', loading);
+});
 
 // Tab hover tooltip (title + URL preview)
 let tabTooltip = null;
@@ -215,8 +220,14 @@ document.getElementById('tabs').addEventListener('mouseover', (e) => {
     tabTooltip.innerHTML = `<div class="tt-title">${escapeHtml(tab.title || 'New tab')}</div><div class="tt-url">${escapeHtml(tab.url || '')}</div>`;
     const rect = tabEl.getBoundingClientRect();
     tabTooltip.style.display = 'block';
-    tabTooltip.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
-    tabTooltip.style.top = (rect.bottom + 8) + 'px';
+    const ttWidth = 300;
+    const ttHeight = 60;
+    let left = Math.min(rect.left, window.innerWidth - ttWidth - 16);
+    left = Math.max(8, left);
+    let top = rect.bottom + 8;
+    if (top + ttHeight > window.innerHeight) top = rect.top - ttHeight - 8;
+    tabTooltip.style.left = left + 'px';
+    tabTooltip.style.top = top + 'px';
   }, 400);
 });
 document.getElementById('tabs').addEventListener('mouseout', (e) => {
