@@ -142,6 +142,18 @@ function createTab(url) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // Explicit font defaults — generic families (monospace, etc.) must resolve
+      // or sites falling back from webfonts render invisible text
+      defaultFontFamily: {
+        standard: 'Noto Sans',
+        serif: 'Noto Serif',
+        sansSerif: 'Noto Sans',
+        monospace: 'JetBrains Mono',
+        cursive: 'Noto Sans',
+        fantasy: 'Noto Sans',
+      },
+      defaultFontSize: 16,
+      defaultMonospaceFontSize: 13,
     },
   });
   // Masquerade as Chrome for site compatibility
