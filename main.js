@@ -355,8 +355,23 @@ ipcMain.handle('get-site-info', () => {
     };
   } catch { return { url: t.url, secure: false }; }
 });
+ipcMain.handle('reorder-tab', (e, { fromId, toId }) => {
+  // Reorder tabs map by rebuilding in new order
+  const entries = [...tabs.entries()];
+  const fromIdx = entries.findIndex(([id]) => id === fromId);
+  const toIdx = entries.findIndex(([id]) => id === toId);
+  if (fromIdx >= 0 && toIdx >= 0) {
+    const [moved] = entries.splice(fromIdx, 1);
+    entries.splice(toIdx, 0, moved);
+    tabs.clear();
+    for (const [id, t] of entries) tabs.set(id, t);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('tabs-changed', [...tabs.entries()].map(([id, t]) => ({ id, url: t.url, title: t.title, active: id === activeTabId })));
+    }
+  }
+});
 ipcMain.handle('get-tabs', () => {
-  return [...tabs.entries()].map(([id, t]) => ({ tabId: id, url: t.url, title: t.title, active: id === activeTabId }));
+  return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, active: id === activeTabId }));
 });
 
 app.whenReady().then(() => {

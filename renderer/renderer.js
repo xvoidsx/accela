@@ -108,10 +108,10 @@ async function renderBookmarks() {
   const star = document.getElementById('bookmark-btn');
   if (active && bm.find(b => b.url === active.url)) {
     star.classList.add('bookmarked');
-    star.textContent = '★';
+    star.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#ffd700"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
   } else {
     star.classList.remove('bookmarked');
-    star.textContent = '☆';
+    star.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
   }
 }
 
@@ -198,6 +198,77 @@ renderTabs = async function() {
 // Reload animation
 window.accela.onPageLoading((loading) => {
   document.getElementById('reload-btn').classList.toggle('loading', loading);
+});
+
+
+// Middle-click closes tab
+document.getElementById('tabs').addEventListener('mousedown', (e) => {
+  const tabEl = e.target.closest('.tab');
+  if (tabEl && e.button === 1) {
+    e.preventDefault();
+    window.accela.closeTab(tabEl.dataset.id);
+  }
+});
+
+// Tab right-click menu
+document.getElementById('tabs').addEventListener('contextmenu', (e) => {
+  const tabEl = e.target.closest('.tab');
+  if (!tabEl) return;
+  e.preventDefault();
+  const tabId = tabEl.dataset.id;
+  // Remove existing menu
+  const old = document.getElementById('tab-context-menu');
+  if (old) old.remove();
+  const menu = document.createElement('div');
+  menu.id = 'tab-context-menu';
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <div class="cm-item" data-action="reload">Reload</div>
+    <div class="cm-item" data-action="duplicate">Duplicate</div>
+    <div class="cm-sep"></div>
+    <div class="cm-item" data-action="close">Close tab</div>
+    <div class="cm-item" data-action="close-others">Close other tabs</div>
+  `;
+  menu.style.left = e.pageX + 'px';
+  menu.style.top = e.pageY + 'px';
+  document.body.appendChild(menu);
+  menu.addEventListener('click', async (ev) => {
+    const action = ev.target.dataset.action;
+    if (action === 'close') window.accela.closeTab(tabId);
+    else if (action === 'reload') { await window.accela.switchTab(tabId); window.accela.reload(); }
+    else if (action === 'duplicate') {
+      const tabs = await window.accela.getTabs();
+      const t = tabs.find(x => x.id === tabId);
+      if (t) window.accela.newTab(t.url);
+    }
+    else if (action === 'close-others') {
+      const tabs = await window.accela.getTabs();
+      for (const t of tabs) if (t.id !== tabId) window.accela.closeTab(t.id);
+    }
+    menu.remove();
+  });
+  const closeMenu = (ev) => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', closeMenu); } };
+  setTimeout(() => document.addEventListener('click', closeMenu), 10);
+});
+
+// Tab drag & drop reorder
+let dragTabId = null;
+document.getElementById('tabs').addEventListener('dragstart', (e) => {
+  const tabEl = e.target.closest('.tab');
+  if (tabEl) { dragTabId = tabEl.dataset.id; e.dataTransfer.effectAllowed = 'move'; }
+});
+document.getElementById('tabs').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+});
+document.getElementById('tabs').addEventListener('drop', (e) => {
+  e.preventDefault();
+  const tabEl = e.target.closest('.tab');
+  if (tabEl && dragTabId && tabEl.dataset.id !== dragTabId) {
+    // Reorder via IPC (main process will handle)
+    window.accela.reorderTab(dragTabId, tabEl.dataset.id);
+  }
+  dragTabId = null;
 });
 
 // Tab hover tooltip (title + URL preview)

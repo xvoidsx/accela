@@ -21,4 +21,7 @@ contextBridge.exposeInMainWorld('accela', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   setSearchEngine: (id) => ipcRenderer.invoke('set-search-engine', id),
   getSiteInfo: () => ipcRenderer.invoke('get-site-info'),
+  onPageLoading: (cb) => ipcRenderer.on('page-loading', (e, loading) => cb(loading)),
+  onTabsChanged: (cb) => ipcRenderer.on('tabs-changed', (e, tabs) => cb(tabs)),
+  reorderTab: (fromId, toId) => ipcRenderer.invoke('reorder-tab', { fromId, toId }),
 });
