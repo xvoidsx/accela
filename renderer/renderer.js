@@ -485,12 +485,14 @@ function showPanel(mode) {
   const title = document.getElementById('panel-title');
   const content = document.getElementById('panel-content');
   panel.style.display = 'flex';
+  window.accela.setPanelWidth(320);
   title.textContent = mode === 'bookmarks' ? 'Bookmarks' : 'History';
   renderPanelContent();
 }
 function hidePanel() {
   document.getElementById('sidebar-panel').style.display = 'none';
   panelMode = null;
+  window.accela.setPanelWidth(0);
 }
 async function renderPanelContent() {
   const content = document.getElementById('panel-content');

@@ -12,6 +12,7 @@ let tabCounter = 0;
 let tiledTabIds = null; // [id1, id2] when tiling, null otherwise
 let verticalTabs = false;
 let sidebarWidth = 220;
+let panelWidth = 0; // bookmarks/history panel width
 
 const CHROME_HEIGHT = 100; // tab strip + toolbar (measured)
 
@@ -380,7 +381,7 @@ function layoutViews() {
   const bounds = mainWindow.getContentBounds();
   const chromeWidth = verticalTabs ? sidebarWidth : 0; // vertical tab strip width
   const chromeTop = verticalTabs ? 48 : CHROME_HEIGHT; // toolbar height when vertical
-  const availWidth = bounds.width - chromeWidth;
+  const availWidth = bounds.width - chromeWidth - panelWidth;
   const availHeight = Math.max(0, bounds.height - chromeTop);
 
   if (tiledTabIds && tiledTabIds.length === 2) {
@@ -636,6 +637,7 @@ ipcMain.handle('move-tab', (e, { draggedId, targetId }) => {
 });
 ipcMain.handle('get-history', () => history);
 ipcMain.handle('set-sidebar-width', (e, w) => { sidebarWidth = w; layoutViews(); });
+ipcMain.handle('set-panel-width', (e, w) => { panelWidth = w; layoutViews(); });
 ipcMain.handle('get-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, pinned: !!t.pinned, active: id === activeTabId }));
 });

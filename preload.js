@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('accela', {
   getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   setSidebarWidth: (w) => ipcRenderer.invoke('set-sidebar-width', w),
+  setPanelWidth: (w) => ipcRenderer.invoke('set-panel-width', w),
   addBookmark: (title, url) => ipcRenderer.invoke('add-bookmark', { title, url }),
   removeBookmark: (url) => ipcRenderer.invoke('remove-bookmark', url),
   toggleDevTools: () => ipcRenderer.invoke('toggle-devtools'),
