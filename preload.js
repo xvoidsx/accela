@@ -18,4 +18,7 @@ contextBridge.exposeInMainWorld('accela', {
   addBookmark: (title, url) => ipcRenderer.invoke('add-bookmark', { title, url }),
   removeBookmark: (url) => ipcRenderer.invoke('remove-bookmark', url),
   toggleDevTools: () => ipcRenderer.invoke('toggle-devtools'),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  setSearchEngine: (id) => ipcRenderer.invoke('set-search-engine', id),
+  getSiteInfo: () => ipcRenderer.invoke('get-site-info'),
 });

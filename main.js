@@ -25,6 +25,32 @@ function saveBookmarks(bm) {
   try { fs.writeFileSync(bookmarksPath, JSON.stringify(bm, null, 2)); } catch {}
 }
 
+// Search engines
+const SEARCH_ENGINES = {
+  brave:   { name: 'Brave Search',  url: 'https://search.brave.com/search?q=%s' },
+  duckduckgo: { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=%s' },
+  google:  { name: 'Google',        url: 'https://www.google.com/search?q=%s' },
+  bing:    { name: 'Bing',          url: 'https://www.bing.com/search?q=%s' },
+  startpage: { name: 'Startpage',   url: 'https://www.startpage.com/sp/search?query=%s' },
+  mojeek:  { name: 'Mojeek',        url: 'https://www.mojeek.com/search?q=%s' },
+  searxng: { name: 'SearXNG',       url: 'https://search.inetol.net/search?q=%s' },
+};
+const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+function loadSettings() {
+  try {
+    if (fs.existsSync(settingsPath)) return JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  } catch {}
+  return { searchEngine: 'brave' };
+}
+function saveSettings(s) {
+  try { fs.writeFileSync(settingsPath, JSON.stringify(s, null, 2)); } catch {}
+}
+function searchUrl(query) {
+  const s = loadSettings();
+  const engine = SEARCH_ENGINES[s.searchEngine] || SEARCH_ENGINES.brave;
+  return engine.url.replace('%s', encodeURIComponent(query));
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -93,7 +119,9 @@ function createWindow() {
   // Global shortcuts for address bar focus
   globalShortcut.register('CmdOrCtrl+L', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('focus-address-bar');
+      mainWindow.focus();
+      // Small delay to ensure window focus before webContents focus
+      setTimeout(() => mainWindow.webContents.send('focus-address-bar'), 50);
     }
   });
 
@@ -113,6 +141,8 @@ function createTab(url) {
       contextIsolation: true,
     },
   });
+  // Masquerade as Chrome for site compatibility
+  view.webContents.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
 
   // Handle accela:// protocol internally
   view.webContents.on('will-navigate', (e, navUrl) => {
@@ -224,7 +254,7 @@ ipcMain.handle('navigate', (e, { tabId, url }) => {
     if (/^[\w-]+(\.[\w-]+)+/.test(target)) {
       target = 'https://' + target;
     } else {
-      target = 'https://search.brave.com/search?q=' + encodeURIComponent(target);
+      target = searchUrl(target);
     }
   }
   t.view.webContents.loadURL(target);
@@ -258,6 +288,26 @@ ipcMain.handle('remove-bookmark', (e, url) => {
 ipcMain.handle('toggle-devtools', () => {
   const t = tabs.get(activeTabId);
   if (t) t.view.webContents.toggleDevTools();
+});
+ipcMain.handle('get-settings', () => ({ ...loadSettings(), engines: SEARCH_ENGINES }));
+ipcMain.handle('set-search-engine', (e, id) => {
+  const s = loadSettings();
+  if (SEARCH_ENGINES[id]) { s.searchEngine = id; saveSettings(s); }
+  return s;
+});
+ipcMain.handle('get-site-info', () => {
+  const t = tabs.get(activeTabId);
+  if (!t) return null;
+  try {
+    const u = new URL(t.url);
+    return {
+      url: t.url,
+      host: u.host,
+      protocol: u.protocol,
+      secure: u.protocol === 'https:',
+      title: t.title,
+    };
+  } catch { return { url: t.url, secure: false }; }
 });
 ipcMain.handle('get-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({ tabId: id, url: t.url, title: t.title, active: id === activeTabId }));

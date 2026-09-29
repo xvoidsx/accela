@@ -127,6 +127,69 @@ document.getElementById('bookmark-btn').addEventListener('click', async () => {
   renderBookmarks();
 });
 
+
+// Site info popup
+const siteInfoBtn = document.getElementById('site-info-btn');
+const siteInfoPopup = document.getElementById('site-info-popup');
+siteInfoBtn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const info = await window.accela.getSiteInfo();
+  if (!info) return;
+  const secureIcon = info.secure ? '<span class="secure-yes">🔒 Secure</span>' : '<span class="secure-no">⚠️ Not secure</span>';
+  siteInfoPopup.innerHTML = `
+    <h3>Site information</h3>
+    <div class="row"><span class="label">Status</span><span>${secureIcon}</span></div>
+    <div class="row"><span class="label">Host</span><span class="value">${escapeHtml(info.host || '')}</span></div>
+    <div class="row"><span class="label">Protocol</span><span class="value">${escapeHtml(info.protocol || '')}</span></div>
+    <div class="row"><span class="label">Title</span><span class="value">${escapeHtml(info.title || '')}</span></div>
+  `;
+  siteInfoPopup.style.display = siteInfoPopup.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('settings-popup').style.display = 'none';
+  // Update lock icon
+  siteInfoBtn.textContent = info.secure ? '🔒' : '⚠️';
+  siteInfoBtn.classList.toggle('insecure', !info.secure);
+});
+
+// Settings popup (search engine)
+const settingsBtn = document.getElementById('settings-btn');
+const settingsPopup = document.getElementById('settings-popup');
+settingsBtn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const { searchEngine, engines } = await window.accela.getSettings();
+  let options = '';
+  for (const [id, eng] of Object.entries(engines)) {
+    options += `<option value="${id}"${id === searchEngine ? ' selected' : ''}>${escapeHtml(eng.name)}</option>`;
+  }
+  settingsPopup.innerHTML = `
+    <h3>Settings</h3>
+    <div class="row"><span class="label">Search engine</span></div>
+    <select id="search-engine-select">${options}</select>
+  `;
+  settingsPopup.style.display = settingsPopup.style.display === 'none' ? 'block' : 'none';
+  siteInfoPopup.style.display = 'none';
+  document.getElementById('search-engine-select').addEventListener('change', async (ev) => {
+    await window.accela.setSearchEngine(ev.target.value);
+  });
+});
+
+// Close popups on outside click
+document.addEventListener('click', (e) => {
+  if (!siteInfoPopup.contains(e.target) && e.target !== siteInfoBtn) siteInfoPopup.style.display = 'none';
+  if (!settingsPopup.contains(e.target) && e.target !== settingsBtn) settingsPopup.style.display = 'none';
+});
+
+// Update site info icon on tab change
+const origRender = renderTabs;
+renderTabs = async function() {
+  origRender();
+  const info = await window.accela.getSiteInfo().catch(() => null);
+  if (info) {
+    siteInfoBtn.textContent = info.secure ? '🔒' : '⚠️';
+    siteInfoBtn.classList.toggle('insecure', !info.secure);
+    siteInfoBtn.title = info.secure ? `Secure connection to ${info.host}` : `Not secure — ${info.host || info.url}`;
+  }
+};
+
 // Init
 renderBookmarks();
 window.accela.getTabs().then(list => {

@@ -143,3 +143,37 @@ body {
 }
 .bookmark:hover { border-color: var(--secondary); }
 #bookmark-btn.bookmarked { color: var(--tertiary); }
+
+/* Popups (site info, settings) */
+.popup {
+  position: fixed;
+  top: 100px;
+  left: 12px;
+  width: 320px;
+  background: #1c1c26;
+  border: 1px solid #3a3a48;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.7);
+  z-index: 1000;
+}
+.popup h3 { margin: 0 0 12px; font-size: 15px; color: #00ffff; }
+.popup .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; border-bottom: 1px solid #23232e; }
+.popup .row:last-child { border-bottom: none; }
+.popup .label { color: #888; }
+.popup .value { color: #fff; font-family: monospace; font-size: 12px; word-break: break-all; }
+.popup .secure-yes { color: #39ff14; }
+.popup .secure-no { color: #ff6b6b; }
+#settings-popup { left: auto; right: 12px; }
+#settings-popup select {
+  width: 100%;
+  padding: 10px;
+  background: #0d0d14;
+  color: #fff;
+  border: 1px solid #3a3a48;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+#site-info-btn { font-size: 14px !important; }
+#site-info-btn.insecure { color: #ff6b6b !important; }
