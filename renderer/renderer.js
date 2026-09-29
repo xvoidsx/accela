@@ -1,6 +1,7 @@
 // Accela renderer — browser chrome logic (tabs, navigation)
 let tabs = new Map();
 let activeTabId = null;
+let tiledIds = [];
 
 const $ = id => document.getElementById(id);
 const tabsEl = $('tabs');
@@ -10,7 +11,7 @@ function renderTabs() {
   tabsEl.innerHTML = '';
   for (const [id, t] of tabs) {
     const el = document.createElement('div');
-    el.className = 'tab' + (id === activeTabId ? ' active' : '') + (t.pinned ? ' pinned' : '');
+    el.className = 'tab' + (id === activeTabId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (tiledIds.includes(id) ? ' tiled' : '');
     el.dataset.id = id;
     el.title = (t.title || 'New Tab') + (t.url && !t.url.startsWith('accela://') ? '\n' + t.url : '');
     el.draggable = true;
@@ -91,13 +92,10 @@ function escapeHtml(s) {
 function navigateFromBar() {
   const url = addrBar.value.trim();
   if (!url) return;
-  window.accela.navigate(activeTabId, url);
-  // Clear bang prefix after search (e.g. "!yt query" -> "query")
-  if (/^!\w+\s/.test(addrBar.value)) {
-    addrBar.value = addrBar.value.replace(/^!\w+\s*/, '');
-    if (typeof bangIndicator !== 'undefined' && bangIndicator) bangIndicator.style.display = 'none';
-  }
+  // Blur FIRST so tab-updated can refresh the address bar
   addrBar.blur();
+  if (typeof bangIndicator !== 'undefined' && bangIndicator) bangIndicator.style.display = 'none';
+  window.accela.navigate(activeTabId, url);
 }
 
 // Events
@@ -116,6 +114,10 @@ window.accela.onTabCreated(({ tabId, url }) => {
 });
 window.accela.onTabClosed(({ tabId }) => {
   tabs.delete(tabId);
+  renderTabs();
+});
+window.accela.onTilingChanged(({ tiled, tabs: ids }) => {
+  tiledIds = tiled ? ids : [];
   renderTabs();
 });
 window.accela.onTabsChanged((tabList) => {

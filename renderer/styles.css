@@ -427,3 +427,39 @@ body.vertical-tabs.tabs-collapsed #new-tab-btn {
   margin: 8px auto 0;
   padding: 0;
 }
+
+/* Tiled tab indicator */
+.tab.tiled {
+  border: 1px solid #00ffff;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+}
+.tab.tiled::after {
+  content: '◫';
+  font-size: 10px;
+  color: #00ffff;
+  margin-left: 4px;
+}
+
+/* Smooth transitions */
+.tab {
+  transition: width 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+#tab-strip {
+  transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease;
+}
+#toolbar {
+  transition: opacity 0.2s ease;
+}
+
+/* Beautiful hover states */
+.tab:hover {
+  background: rgba(255, 45, 149, 0.15);
+}
+.tab.active {
+  background: linear-gradient(135deg, rgba(255,45,149,0.25), rgba(0,255,255,0.15));
+  border: 1px solid rgba(255, 45, 149, 0.4);
+}
+button:hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease;
+}
