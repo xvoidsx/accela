@@ -593,7 +593,7 @@ ipcMain.handle('reorder-tab', (e, { fromId, toId }) => {
 ipcMain.handle('debug-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({
     id, url: t.url, title: t.title, pinned: !!t.pinned,
-    hasView: !!t.view, viewVisible: t.view ? t.view.getVisible() : null,
+    hasView: !!t.view,
   }));
 });
 ipcMain.handle('get-tabs', () => {

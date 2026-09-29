@@ -434,8 +434,8 @@ document.getElementById('tabs').addEventListener('mouseout', (e) => {
 // Init
 renderBookmarks();
 window.accela.getTabs().then(list => {
-  list.forEach(t => tabs.set(t.tabId, { url: t.url, title: t.title }));
+  list.forEach(t => tabs.set(t.id, { url: t.url, title: t.title, pinned: !!t.pinned }));
   const active = list.find(t => t.active);
-  if (active) activeTabId = active.tabId;
+  if (active) activeTabId = active.id;
   renderTabs();
 });
