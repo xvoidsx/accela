@@ -252,19 +252,23 @@ body {
 .tab.dragging { opacity: .5; }
 
 /* Vertical tabs */
-body.vertical-tabs #chrome { display: flex; flex-direction: row; }
+body.vertical-tabs #chrome { display: flex; flex-direction: row; height: 100vh; }
 body.vertical-tabs #tab-strip {
   width: 220px;
   min-width: 220px;
+  max-width: 220px;
   flex-direction: column;
   border-right: 1px solid var(--outline);
   border-bottom: none;
   padding: 8px;
+  height: 100vh;
+  overflow-y: auto;
 }
-body.vertical-tabs #tabs { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-body.vertical-tabs .tab { width: 100%; margin-bottom: 4px; }
-body.vertical-tabs #toolbar { flex: 1; }
-body.vertical-tabs #main-column { display: flex; flex-direction: column; flex: 1; }
+body.vertical-tabs #tabs { flex-direction: column; overflow-y: auto; overflow-x: hidden; flex: 1; }
+body.vertical-tabs .tab { width: 100%; margin-bottom: 4px; flex-shrink: 0; }
+body.vertical-tabs #new-tab-btn { width: 100%; margin-top: 8px; }
+body.vertical-tabs #main-column { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+body.vertical-tabs #toolbar { flex-shrink: 0; }
 
 /* Tiling indicator */
 #tiling-indicator {

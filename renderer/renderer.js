@@ -227,6 +227,7 @@ document.getElementById('tabs').addEventListener('contextmenu', (e) => {
     <div class="cm-item" data-action="duplicate">Duplicate</div>
     <div class="cm-sep"></div>
     <div class="cm-item" data-action="tile">Tile with another tab...</div>
+    <div class="cm-item" data-action="toggle-vertical">Toggle vertical tabs</div>
     <div class="cm-sep"></div>
     <div class="cm-item" data-action="close">Close tab</div>
     <div class="cm-item" data-action="close-others">Close other tabs</div>
@@ -247,6 +248,10 @@ document.getElementById('tabs').addEventListener('contextmenu', (e) => {
       const tabs = await window.accela.getTabs();
       for (const t of tabs) if (t.id !== tabId) window.accela.closeTab(t.id);
     }
+    else if (action === 'toggle-vertical') {
+      const vt = await window.accela.toggleVerticalTabs();
+      document.body.classList.toggle('vertical-tabs', vt);
+    }
     else if (action === 'tile') {
       const tabs = await window.accela.getTabs();
       const others = tabs.filter(t => t.id !== tabId);
@@ -265,7 +270,17 @@ document.getElementById('tabs').addEventListener('contextmenu', (e) => {
 let dragTabId = null;
 document.getElementById('tabs').addEventListener('dragstart', (e) => {
   const tabEl = e.target.closest('.tab');
-  if (tabEl) { dragTabId = tabEl.dataset.id; e.dataTransfer.effectAllowed = 'move'; }
+  if (tabEl) {
+    dragTabId = tabEl.dataset.id;
+    tabEl.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragTabId);
+  }
+});
+document.getElementById('tabs').addEventListener('dragend', (e) => {
+  const tabEl = e.target.closest('.tab');
+  if (tabEl) tabEl.classList.remove('dragging');
+  dragTabId = null;
 });
 document.getElementById('tabs').addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -279,12 +294,6 @@ document.getElementById('tabs').addEventListener('drop', (e) => {
     window.accela.reorderTab(dragTabId, tabEl.dataset.id);
   }
   dragTabId = null;
-});
-
-// Vertical tabs toggle
-document.getElementById('vertical-tabs-btn').addEventListener('click', async () => {
-  const vt = await window.accela.toggleVerticalTabs();
-  document.body.classList.toggle('vertical-tabs', vt);
 });
 
 // Untile button
