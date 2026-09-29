@@ -135,7 +135,9 @@ siteInfoBtn.addEventListener('click', async (e) => {
   e.stopPropagation();
   const info = await window.accela.getSiteInfo();
   if (!info) return;
-  const secureIcon = info.secure ? '<span class="secure-yes">🔒 Secure</span>' : '<span class="secure-no">⚠️ Not secure</span>';
+  const lockSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>';
+  const warnSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>';
+  const secureIcon = info.secure ? `<span class="secure-yes">${lockSvg} Secure</span>` : `<span class="secure-no">${warnSvg} Not secure</span>`;
   siteInfoPopup.innerHTML = `
     <h3>Site information</h3>
     <div class="row"><span class="label">Status</span><span>${secureIcon}</span></div>
@@ -145,8 +147,8 @@ siteInfoBtn.addEventListener('click', async (e) => {
   `;
   siteInfoPopup.style.display = siteInfoPopup.style.display === 'none' ? 'block' : 'none';
   document.getElementById('settings-popup').style.display = 'none';
-  // Update lock icon
-  siteInfoBtn.textContent = info.secure ? '🔒' : '⚠️';
+  // Update lock icon (SVG)
+  siteInfoBtn.innerHTML = info.secure ? lockSvg.replace('width="14" height="14"', 'width="16" height="16"') : warnSvg.replace('width="14" height="14"', 'width="16" height="16"');
   siteInfoBtn.classList.toggle('insecure', !info.secure);
 });
 
@@ -184,11 +186,43 @@ renderTabs = async function() {
   origRender();
   const info = await window.accela.getSiteInfo().catch(() => null);
   if (info) {
-    siteInfoBtn.textContent = info.secure ? '🔒' : '⚠️';
+    const lSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>';
+    const wSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>';
+    siteInfoBtn.innerHTML = info.secure ? lSvg : wSvg;
     siteInfoBtn.classList.toggle('insecure', !info.secure);
     siteInfoBtn.title = info.secure ? `Secure connection to ${info.host}` : `Not secure — ${info.host || info.url}`;
   }
 };
+
+
+// Tab hover tooltip (title + URL preview)
+let tabTooltip = null;
+let tooltipTimer = null;
+document.getElementById('tabs').addEventListener('mouseover', (e) => {
+  const tabEl = e.target.closest('.tab');
+  if (!tabEl) return;
+  const tabId = tabEl.dataset.id;
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(async () => {
+    const tabs = await window.accela.getTabs();
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+    if (!tabTooltip) {
+      tabTooltip = document.createElement('div');
+      tabTooltip.id = 'tab-tooltip';
+      document.body.appendChild(tabTooltip);
+    }
+    tabTooltip.innerHTML = `<div class="tt-title">${escapeHtml(tab.title || 'New tab')}</div><div class="tt-url">${escapeHtml(tab.url || '')}</div>`;
+    const rect = tabEl.getBoundingClientRect();
+    tabTooltip.style.display = 'block';
+    tabTooltip.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+    tabTooltip.style.top = (rect.bottom + 8) + 'px';
+  }, 400);
+});
+document.getElementById('tabs').addEventListener('mouseout', (e) => {
+  clearTimeout(tooltipTimer);
+  if (tabTooltip) tabTooltip.style.display = 'none';
+});
 
 // Init
 renderBookmarks();

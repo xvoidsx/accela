@@ -120,8 +120,11 @@ function createWindow() {
   globalShortcut.register('CmdOrCtrl+L', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.focus();
-      // Small delay to ensure window focus before webContents focus
-      setTimeout(() => mainWindow.webContents.send('focus-address-bar'), 50);
+      // Blur the page view so keystrokes go to our UI, not the page
+      const t = tabs.get(activeTabId);
+      if (t) t.view.webContents.blur();
+      mainWindow.webContents.focus();
+      setTimeout(() => mainWindow.webContents.send('focus-address-bar'), 100);
     }
   });
 
