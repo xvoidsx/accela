@@ -106,9 +106,6 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: url === 'accela://settings'
-        ? path.join(__dirname, 'settings-preload.js')
-        : path.join(__dirname, 'preload.js'),
       preload: path.join(__dirname, 'preload.js'),
     },
     autoHideMenuBar: true,
