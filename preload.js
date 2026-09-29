@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('accela', {
   goForward: () => ipcRenderer.invoke('go-forward'),
   reload: () => ipcRenderer.invoke('reload'),
   getTabs: () => ipcRenderer.invoke('get-tabs'),
+  moveTab: (draggedId, targetId) => ipcRenderer.invoke('move-tab', { draggedId, targetId }),
   debugTabs: () => ipcRenderer.invoke('debug-tabs'),
   onTabCreated: (cb) => ipcRenderer.on('tab-created', (e, d) => cb(d)),
   onTabClosed: (cb) => ipcRenderer.on('tab-closed', (e, d) => cb(d)),

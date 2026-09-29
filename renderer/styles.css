@@ -263,6 +263,9 @@ body.vertical-tabs #tab-strip {
   padding: 8px;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--surface);
+  display: flex;
 }
 body.vertical-tabs #tabs { flex-direction: column; overflow-y: auto; overflow-x: hidden; flex: 1; }
 body.vertical-tabs .tab { width: 100%; margin-bottom: 4px; flex-shrink: 0; }
@@ -365,3 +368,23 @@ body.vertical-tabs.tabs-collapsed .tab {
   width: 20px;
   height: 20px;
 }
+
+/* Vertical tabs: ensure tabs render properly */
+body.vertical-tabs #tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+body.vertical-tabs .tab {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* Tab drag feedback */
+.tab.dragging { opacity: 0.5; }
+.tab.drag-over { border: 2px dashed #ff2d95; }

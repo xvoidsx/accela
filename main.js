@@ -596,6 +596,20 @@ ipcMain.handle('debug-tabs', () => {
     hasView: !!t.view,
   }));
 });
+ipcMain.handle('move-tab', (e, { draggedId, targetId }) => {
+  if (!tabs.has(draggedId) || !tabs.has(targetId) || draggedId === targetId) return;
+  const entries = [...tabs.entries()];
+  const draggedIdx = entries.findIndex(([id]) => id === draggedId);
+  const targetIdx = entries.findIndex(([id]) => id === targetId);
+  if (draggedIdx === -1 || targetIdx === -1) return;
+  const [dragged] = entries.splice(draggedIdx, 1);
+  // Insert before target (adjust for removal)
+  const insertIdx = draggedIdx < targetIdx ? targetIdx - 1 : targetIdx;
+  entries.splice(insertIdx, 0, dragged);
+  tabs.clear();
+  for (const [id, tab] of entries) tabs.set(id, tab);
+  sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: !!tb.pinned, favicon: tb.favicon || null, active: id === activeTabId })));
+});
 ipcMain.handle('get-tabs', () => {
   return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, pinned: !!t.pinned, active: id === activeTabId }));
 });

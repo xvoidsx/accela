@@ -14,7 +14,15 @@ function renderTabs() {
     el.dataset.id = id;
     el.title = (t.title || 'New Tab') + (t.url && !t.url.startsWith('accela://') ? '\n' + t.url : '');
     el.draggable = true;
-    const faviconHtml = t.favicon ? `<img class="tab-favicon" src="${escapeHtml(t.favicon)}" onerror="this.style.display='none'"/>` : '';
+    let faviconUrl = t.favicon;
+    // Fallback: use Google's favicon service for http(s) URLs
+    if (!faviconUrl && t.url && t.url.startsWith('http')) {
+      try {
+        const domain = new URL(t.url).hostname;
+        faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      } catch (e) {}
+    }
+    const faviconHtml = faviconUrl ? `<img class="tab-favicon" src="${escapeHtml(faviconUrl)}" onerror="this.style.display='none'"/>` : '';
     if (t.pinned) {
       // Pinned: favicon or icon, no close button
       const icon = (t.title || 'N')[0].toUpperCase();
@@ -30,6 +38,32 @@ function renderTabs() {
       } catch (err) {
         console.error('[accela] switchTab failed:', err);
       }
+    });
+    // Drag to reorder
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', id);
+      e.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.tab.drag-over').forEach(t => t.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('drag-over');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (draggedId && draggedId !== id) {
+        window.accela.moveTab(draggedId, id);
+      }
+      el.classList.remove('drag-over');
     });
     const closeBtn = el.querySelector('.tab-close');
     if (closeBtn) closeBtn.addEventListener('click', (e) => {
@@ -81,6 +115,15 @@ window.accela.onTabCreated(({ tabId, url }) => {
 });
 window.accela.onTabClosed(({ tabId }) => {
   tabs.delete(tabId);
+  renderTabs();
+});
+window.accela.onTabsChanged((tabList) => {
+  // Full sync: replace tabs Map with updated list (handles pin/unpin)
+  tabs.clear();
+  for (const t of tabList) {
+    tabs.set(t.id, { url: t.url, title: t.title, pinned: !!t.pinned, favicon: t.favicon || null });
+    if (t.active) activeTabId = t.id;
+  }
   renderTabs();
 });
 window.accela.onTabActivated(({ tabId, url, title }) => {
