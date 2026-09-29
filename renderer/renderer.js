@@ -24,9 +24,10 @@ function renderTabs() {
     }
     const faviconHtml = faviconUrl ? `<img class="tab-favicon" src="${escapeHtml(faviconUrl)}" onerror="this.style.display='none'"/>` : '';
     if (t.pinned) {
-      // Pinned: favicon or icon, no close button
+      // Pinned: favicon preferred, fallback to letter
       const icon = (t.title || 'N')[0].toUpperCase();
-      el.innerHTML = t.favicon ? faviconHtml : `<span class="tab-icon">${escapeHtml(icon)}</span>`;
+      // Use faviconUrl (includes fallback) if available
+      el.innerHTML = faviconUrl ? `<img class="tab-favicon" src="${escapeHtml(faviconUrl)}" onerror="this.outerHTML='<span class=&quot;tab-icon&quot;>${escapeHtml(icon)}</span>'"/>` : `<span class="tab-icon">${escapeHtml(icon)}</span>`;
     } else {
       el.innerHTML = `${faviconHtml}<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
     }

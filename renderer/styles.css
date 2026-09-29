@@ -388,3 +388,42 @@ body.vertical-tabs .tab {
 /* Tab drag feedback */
 .tab.dragging { opacity: 0.5; }
 .tab.drag-over { border: 2px dashed #ff2d95; }
+
+/* Collapsed vertical tabs: circular favicon-only */
+body.vertical-tabs.tabs-collapsed #tab-strip {
+  width: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  padding: 8px 6px;
+}
+body.vertical-tabs.tabs-collapsed .tab {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+body.vertical-tabs.tabs-collapsed .tab .tab-title,
+body.vertical-tabs.tabs-collapsed .tab .tab-close {
+  display: none !important;
+}
+body.vertical-tabs.tabs-collapsed .tab .tab-favicon {
+  width: 24px !important;
+  height: 24px !important;
+  margin: 0 !important;
+}
+body.vertical-tabs.tabs-collapsed .tab .tab-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+body.vertical-tabs.tabs-collapsed #new-tab-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  margin: 8px auto 0;
+  padding: 0;
+}
