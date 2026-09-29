@@ -332,8 +332,10 @@ body.vertical-tabs #toolbar { flex-shrink: 0; }
 body.vertical-tabs .tab.pinned { width: 100%; max-width: none; }
 
 /* Collapsed vertical tabs */
-body.vertical-tabs.tabs-collapsed #sidebar {
+body.vertical-tabs.tabs-collapsed #tab-strip,
+body.vertical-tabs.tabs-collapsed #tabs {
   width: 48px !important;
+  min-width: 48px !important;
 }
 body.vertical-tabs.tabs-collapsed .tab .tab-title {
   display: none;
@@ -350,3 +352,16 @@ body.vertical-tabs.tabs-collapsed .tab {
   padding: 8px;
 }
 #collapse-tabs-btn:hover { color: #fff; }
+
+/* Favicons */
+.tab-favicon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.tab.pinned .tab-favicon {
+  margin-right: 0;
+  width: 20px;
+  height: 20px;
+}

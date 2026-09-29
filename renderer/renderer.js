@@ -12,14 +12,15 @@ function renderTabs() {
     const el = document.createElement('div');
     el.className = 'tab' + (id === activeTabId ? ' active' : '') + (t.pinned ? ' pinned' : '');
     el.dataset.id = id;
+    el.title = (t.title || 'New Tab') + (t.url && !t.url.startsWith('accela://') ? '\n' + t.url : '');
     el.draggable = true;
+    const faviconHtml = t.favicon ? `<img class="tab-favicon" src="${escapeHtml(t.favicon)}" onerror="this.style.display='none'"/>` : '';
     if (t.pinned) {
-      // Pinned: icon only, no close button (use context menu to unpin/close)
+      // Pinned: favicon or icon, no close button
       const icon = (t.title || 'N')[0].toUpperCase();
-      el.innerHTML = `<span class="tab-icon">${escapeHtml(icon)}</span>`;
-      el.title = escapeHtml(t.title || 'New Tab');
+      el.innerHTML = t.favicon ? faviconHtml : `<span class="tab-icon">${escapeHtml(icon)}</span>`;
     } else {
-      el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+      el.innerHTML = `${faviconHtml}<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
     }
     el.querySelector('.tab-title').parentElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('tab-close')) return;
@@ -47,6 +48,11 @@ function navigateFromBar() {
   const url = addrBar.value.trim();
   if (!url) return;
   window.accela.navigate(activeTabId, url);
+  // Clear bang prefix after search (e.g. "!yt query" -> "query")
+  if (/^!\w+\s/.test(addrBar.value)) {
+    addrBar.value = addrBar.value.replace(/^!\w+\s*/, '');
+    if (typeof bangIndicator !== 'undefined' && bangIndicator) bangIndicator.style.display = 'none';
+  }
   addrBar.blur();
 }
 

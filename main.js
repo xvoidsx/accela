@@ -273,16 +273,23 @@ function createTab(url) {
     if (t) t.title = title;
     sendToChrome('tab-updated', { tabId, title });
   });
+  view.webContents.on('page-favicon-updated', (e, favicons) => {
+    const t = tabs.get(tabId);
+    if (t && favicons.length > 0) {
+      t.favicon = favicons[0];
+      sendToChrome('tab-updated', { tabId, favicon: favicons[0] });
+    }
+  });
   view.webContents.on('did-finish-load', () => {
     sendToChrome('tab-updated', { tabId, canGoBack: view.webContents.canGoBack(), canGoForward: view.webContents.canGoForward() });
   });
 
-  tabs.set(tabId, { view, url, title: 'New Tab', pinned: false });
+  tabs.set(tabId, { view, url, title: 'New Tab', pinned: false, favicon: null });
   mainWindow.contentView.addChildView(view);
   setActiveTab(tabId);
 
-  if (url === 'accela://newtab') {
-    loadAccelaPage(view, url);
+  if (url.startsWith('accela://')) {
+    loadAccelaPage(view, url, tabId);
   } else {
     view.webContents.loadURL(url);
   }
@@ -292,7 +299,7 @@ function createTab(url) {
   return tabId;
 }
 
-function loadAccelaPage(view, accelaUrl) {
+function loadAccelaPage(view, accelaUrl, tabId) {
   if (accelaUrl === 'accela://settings') {
     const settingsPath = path.join(__dirname, 'renderer', 'settings.html');
     view.webContents.loadFile(settingsPath);
