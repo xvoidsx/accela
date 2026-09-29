@@ -41,5 +41,5 @@
     "build-deb": "electron-builder --linux deb",
     "start": "electron ."
   },
-  "version": "0.12.0"
+  "version": "0.13.0"
 }

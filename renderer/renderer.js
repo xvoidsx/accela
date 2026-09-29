@@ -22,14 +22,23 @@ function renderTabs() {
     } else {
       el.innerHTML = `${faviconHtml}<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
     }
-    el.querySelector('.tab-title').parentElement.addEventListener('click', (e) => {
-      if (e.target.classList.contains('tab-close')) return;
-      window.accela.switchTab(id);
+    // Click to switch (works for pinned and unpinned)
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.tab-close')) return;
+      try {
+        window.accela.switchTab(id);
+      } catch (err) {
+        console.error('[accela] switchTab failed:', err);
+      }
     });
     const closeBtn = el.querySelector('.tab-close');
     if (closeBtn) closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      window.accela.closeTab(id);
+      try {
+        window.accela.closeTab(id);
+      } catch (err) {
+        console.error('[accela] closeTab failed:', err);
+      }
     });
     tabsEl.appendChild(el);
   }
