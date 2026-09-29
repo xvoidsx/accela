@@ -59,6 +59,7 @@ window.accela.onTabClosed(({ tabId }) => {
   renderTabs();
 });
 window.accela.onTabActivated(({ tabId, url, title }) => {
+  setTimeout(renderBookmarks, 100);
   activeTabId = tabId;
   if (!tabs.has(tabId)) tabs.set(tabId, {});
   Object.assign(tabs.get(tabId), { url, title });
@@ -76,7 +77,58 @@ window.accela.onTabUpdated(({ tabId, url, title, canGoBack, canGoForward }) => {
   renderTabs();
 });
 
+window.accela.onFocusAddressBar(() => {
+  addrBar.focus();
+  addrBar.select();
+});
+
+
+// Bookmarks
+async function renderBookmarks() {
+  const bm = await window.accela.getBookmarks();
+  const bar = document.getElementById('bookmark-bar');
+  bar.innerHTML = '';
+  bm.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'bookmark';
+    el.textContent = b.title || b.url;
+    el.title = b.url;
+    el.addEventListener('click', () => window.accela.navigate(activeTabId, b.url));
+    el.addEventListener('contextmenu', async (e) => {
+      e.preventDefault();
+      if (confirm(`Remove bookmark "${b.title}"?`)) {
+        await window.accela.removeBookmark(b.url);
+        renderBookmarks();
+      }
+    });
+    bar.appendChild(el);
+  });
+  // Update star
+  const active = tabs.get(activeTabId);
+  const star = document.getElementById('bookmark-btn');
+  if (active && bm.find(b => b.url === active.url)) {
+    star.classList.add('bookmarked');
+    star.textContent = '★';
+  } else {
+    star.classList.remove('bookmarked');
+    star.textContent = '☆';
+  }
+}
+
+document.getElementById('bookmark-btn').addEventListener('click', async () => {
+  const active = tabs.get(activeTabId);
+  if (!active || !active.url || active.url.startsWith('accela://')) return;
+  const bm = await window.accela.getBookmarks();
+  if (bm.find(b => b.url === active.url)) {
+    await window.accela.removeBookmark(active.url);
+  } else {
+    await window.accela.addBookmark(active.title || active.url, active.url);
+  }
+  renderBookmarks();
+});
+
 // Init
+renderBookmarks();
 window.accela.getTabs().then(list => {
   list.forEach(t => tabs.set(t.tabId, { url: t.url, title: t.title }));
   const active = list.find(t => t.active);
