@@ -27,6 +27,49 @@ function saveBookmarks(bm) {
   try { fs.writeFileSync(bookmarksPath, JSON.stringify(bm, null, 2)); } catch {}
 }
 
+
+// !bangs — offline shortcuts (Helium-style)
+const BANGS = {
+  // navi / xvoidsx
+  '!radio': 'https://xvoidsx.github.io/navi-radio',
+  '!nl': 'https://neighborli.xyz',
+  '!apps': 'https://xvoidsx.github.io/naviApps',
+  '!wired': 'https://navi.xvoidsx.org',
+  '!xvoidsx': 'https://xvoidsx.org',
+  // general
+  '!yt': 'https://www.youtube.com/results?search_query=%s',
+  '!gh': 'https://github.com/search?q=%s',
+  '!w': 'https://en.wikipedia.org/wiki/Special:Search?search=%s',
+  '!so': 'https://stackoverflow.com/search?q=%s',
+  '!mdn': 'https://developer.mozilla.org/en-US/search?q=%s',
+  '!npm': 'https://www.npmjs.com/search?q=%s',
+  '!pypi': 'https://pypi.org/search/?q=%s',
+  '!arch': 'https://wiki.archlinux.org/index.php?search=%s',
+  '!deb': 'https://packages.debian.org/search?keywords=%s',
+  '!g': 'https://www.google.com/search?q=%s',
+  '!ddg': 'https://duckduckgo.com/?q=%s',
+  '!brave': 'https://search.brave.com/search?q=%s',
+  '!sp': 'https://www.startpage.com/sp/search?query=%s',
+  '!maps': 'https://www.openstreetmap.org/search?query=%s',
+  '!osm': 'https://www.openstreetmap.org/search?query=%s',
+  '!r': 'https://www.reddit.com/search?q=%s',
+  '!hn': 'https://hn.algolia.com/?q=%s',
+  '!lobsters': 'https://lobste.rs/search?q=%s',
+};
+function resolveBang(input) {
+  const parts = input.trim().split(/\s+/);
+  const bang = parts[0].toLowerCase();
+  if (BANGS[bang]) {
+    const query = parts.slice(1).join(' ');
+    const tmpl = BANGS[bang];
+    if (tmpl.includes('%s')) {
+      return tmpl.replace('%s', encodeURIComponent(query));
+    }
+    return tmpl; // no query needed (e.g. !radio)
+  }
+  return null;
+}
+
 // Search engines
 const SEARCH_ENGINES = {
   brave:   { name: 'Brave Search',  url: 'https://search.brave.com/search?q=%s' },
@@ -184,6 +227,20 @@ function createTab(url) {
     menu.popup();
   });
 
+  // Neon pink scrollbar in page content
+  view.webContents.on('dom-ready', () => {
+    view.webContents.insertCSS(`
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-track { background: #0d0d14; }
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #ff2d95, #ff71ce) !important;
+        border-radius: 8px !important;
+        border: 2px solid #0d0d14 !important;
+      }
+      ::-webkit-scrollbar-thumb:hover { background: #ff2d95 !important; }
+    `).catch(() => {});
+  });
+
   // Masquerade as Chrome for site compatibility
   view.webContents.setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.12 Safari/537.36");
 
@@ -231,6 +288,79 @@ function createTab(url) {
 }
 
 function loadAccelaPage(view, accelaUrl) {
+  if (accelaUrl === 'accela://settings') {
+    const s = loadSettings();
+    const engines = Object.entries(SEARCH_ENGINES).map(([id, e]) =>
+      `<option value="${id}"${id === s.searchEngine ? ' selected' : ''}>${e.name}</option>`).join('');
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Settings — Accela</title>
+<style>
+  body { font-family: 'Noto Sans', system-ui, sans-serif; background: #0d0d14; color: #fff; margin: 0; padding: 40px; }
+  h1 { color: #ff2d95; font-size: 28px; margin-bottom: 8px; }
+  .sub { color: #888; margin-bottom: 32px; }
+  .section { background: #1c1c26; border: 1px solid #3a3a48; border-radius: 16px; padding: 24px; margin-bottom: 20px; max-width: 600px; }
+  .section h2 { color: #00ffff; font-size: 18px; margin: 0 0 16px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #23232e; }
+  .row:last-child { border: none; }
+  select, input[type=text] { background: #0d0d14; color: #fff; border: 1px solid #3a3a48; border-radius: 8px; padding: 10px; font-size: 14px; }
+  .toggle { width: 48px; height: 26px; background: #3a3a48; border-radius: 13px; position: relative; cursor: pointer; border: none; }
+  .toggle.on { background: #ff2d95; }
+  .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+  .toggle.on::after { left: 25px; }
+  .desc { color: #888; font-size: 13px; margin-top: 4px; }
+</style></head>
+<body>
+  <h1>Settings</h1>
+  <div class="sub">Accela ${require('./package.json').version}</div>
+
+  <div class="section">
+    <h2>Search</h2>
+    <div class="row">
+      <div><div>Search engine</div><div class="desc">Used for address bar searches</div></div>
+      <select id="se">${engines}</select>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Appearance</h2>
+    <div class="row">
+      <div><div>Vertical tabs</div><div class="desc">Show tabs in a sidebar instead of on top</div></div>
+      <button class="toggle${s.verticalTabs ? ' on' : ''}" id="vt"></button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Privacy</h2>
+    <div class="row">
+      <div><div>blackice adblocking</div><div class="desc">Block ads and trackers natively</div></div>
+      <button class="toggle on" id="bi"></button>
+    </div>
+    <div class="row">
+      <div><div>Blocked this session</div><div class="desc">Requests stopped by blackice</div></div>
+      <div id="blocked" style="color:#39ff14;font-size:20px;font-weight:bold;">0</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>About</h2>
+    <div class="row"><div>Version</div><div>${require('./package.json').version}</div></div>
+    <div class="row"><div>Chromium</div><div>Electron ${process.versions.electron}</div></div>
+    <div class="row"><div>User agent</div><div style="font-size:11px;max-width:300px;word-break:break-all;">Chrome/155 spoof</div></div>
+  </div>
+
+<script>
+  document.getElementById('se').addEventListener('change', e => {
+    fetch('accela://api/set-engine/' + e.target.value);
+  });
+  document.getElementById('vt').addEventListener('click', e => {
+    e.target.classList.toggle('on');
+    fetch('accela://api/toggle-vertical');
+  });
+</script>
+</body></html>`;
+    view.webContents.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+    return;
+  }
   if (accelaUrl === 'accela://newtab') {
     view.webContents.loadFile(path.join(__dirname, 'renderer', 'newtab.html'));
   } else if (accelaUrl === 'accela://settings') {
@@ -349,6 +479,17 @@ ipcMain.handle('toggle-vertical-tabs', () => {
   return verticalTabs;
 });
 ipcMain.handle('get-vertical-tabs', () => verticalTabs);
+ipcMain.handle('open-settings', () => { createTab('accela://settings'); });
+ipcMain.handle('show-blackice-menu', () => {
+  const { getStats } = require('./blackice/engine');
+  const stats = getStats();
+  const menu = Menu.buildFromTemplate([
+    { label: `blackice — ${stats.blockedCount} blocked this session`, enabled: false },
+    { type: 'separator' },
+    { label: 'Open settings', click: () => createTab('accela://settings') },
+  ]);
+  menu.popup({ window: mainWindow });
+});
 ipcMain.handle('navigate', (e, { tabId, url }) => {
   const t = tabs.get(tabId || activeTabId);
   if (!t) return;
@@ -362,7 +503,7 @@ ipcMain.handle('navigate', (e, { tabId, url }) => {
     if (/^[\w-]+(\.[\w-]+)+/.test(target)) {
       target = 'https://' + target;
     } else {
-      target = searchUrl(target);
+      target = resolveBang(target) || searchUrl(target);
     }
   }
   t.view.webContents.loadURL(target);
@@ -416,6 +557,48 @@ ipcMain.handle('get-site-info', () => {
       title: t.title,
     };
   } catch { return { url: t.url, secure: false }; }
+});
+ipcMain.handle('show-tab-menu', (e, { tabId, x, y }) => {
+  const t = tabs.get(tabId);
+  if (!t) return;
+  const menu = Menu.buildFromTemplate([
+    { label: 'Reload', click: () => t.view.webContents.reload() },
+    { label: 'Duplicate', click: () => createTab(t.url) },
+    { type: 'separator' },
+    { label: 'Tile with next tab', click: async () => {
+      const ids = [...tabs.keys()];
+      const idx = ids.indexOf(tabId);
+      if (idx >= 0 && idx + 1 < ids.length) {
+        const { tileTabs } = require('./main.js');
+      }
+      // Use existing tile-tabs handler
+      const nextId = ids[(idx + 1) % ids.length];
+      if (nextId !== tabId) {
+        // Call via IPC
+        tiledTabIds = [tabId, nextId];
+        activeTabId = tabId;
+        layoutViews();
+        sendToChrome('tiling-changed', { tiled: true, tabs: tiledTabIds });
+      }
+    }},
+    { label: verticalTabs ? 'Use horizontal tabs' : 'Use vertical tabs', click: () => {
+      verticalTabs = !verticalTabs;
+      const s = loadSettings(); s.verticalTabs = verticalTabs; saveSettings(s);
+      layoutViews();
+      sendToChrome('vertical-changed', verticalTabs);
+    }},
+    { type: 'separator' },
+    { label: 'Close tab', click: () => closeTab(tabId) },
+    { label: 'Close other tabs', click: () => {
+      for (const [id] of [...tabs]) if (id !== tabId) closeTab(id);
+    }},
+    { label: 'Close tabs to the right', click: () => {
+      const ids = [...tabs.keys()];
+      const idx = ids.indexOf(tabId);
+      for (let i = idx + 1; i < ids.length; i++) closeTab(ids[i]);
+    }},
+  ]);
+  menu.popup({ window: mainWindow, x, y });
 });
 ipcMain.handle('reorder-tab', (e, { fromId, toId }) => {
   // Reorder tabs map by rebuilding in new order

@@ -152,7 +152,14 @@ siteInfoBtn.addEventListener('click', async (e) => {
   siteInfoBtn.classList.toggle('insecure', !info.secure);
 });
 
-// Settings popup (search engine)
+// Shield shows blackice menu
+document.getElementById('shield').addEventListener('click', () => window.accela.showBlackiceMenu());
+// Settings button opens full settings page
+document.getElementById('settings-btn').addEventListener('click', () => {
+  window.accela.openSettings();
+});
+const _settingsLegacy = null;
+if (_settingsLegacy) {
 const settingsBtn = document.getElementById('settings-btn');
 const settingsPopup = document.getElementById('settings-popup');
 settingsBtn.addEventListener('click', async (e) => {
@@ -174,6 +181,7 @@ settingsBtn.addEventListener('click', async (e) => {
   });
 });
 
+} // end legacy settings block
 // Close popups on outside click
 document.addEventListener('click', (e) => {
   if (!siteInfoPopup.contains(e.target) && !siteInfoBtn.contains(e.target)) siteInfoPopup.style.display = 'none';
@@ -210,18 +218,16 @@ document.getElementById('tabs').addEventListener('mousedown', (e) => {
   }
 });
 
-// Tab right-click menu
+// Tab right-click menu (native, always on top)
 document.getElementById('tabs').addEventListener('contextmenu', (e) => {
   const tabEl = e.target.closest('.tab');
   if (!tabEl) return;
   e.preventDefault();
-  const tabId = tabEl.dataset.id;
-  // Remove existing menu
-  const old = document.getElementById('tab-context-menu');
-  if (old) old.remove();
-  const menu = document.createElement('div');
-  menu.id = 'tab-context-menu';
-  menu.className = 'context-menu';
+  window.accela.showTabMenu(tabEl.dataset.id, e.screenX, e.screenY);
+  return; // native menu below replaces HTML version
+  const _unused = document.createElement('div');
+  _unused.id = 'tab-context-menu';
+  _unused.className = 'context-menu';
   menu.innerHTML = `
     <div class="cm-item" data-action="reload">Reload</div>
     <div class="cm-item" data-action="duplicate">Duplicate</div>
@@ -315,6 +321,11 @@ async function initVerticalTabs() {
 }
 initVerticalTabs();
 
+// Vertical tabs changed from native menu
+window.accela.onVerticalChanged((vt) => {
+  document.body.classList.toggle('vertical-tabs', vt);
+});
+
 // Tab hover tooltip (title + URL preview)
 let tabTooltip = null;
 let tooltipTimer = null;
@@ -339,8 +350,9 @@ document.getElementById('tabs').addEventListener('mouseover', (e) => {
     const ttHeight = 60;
     let left = Math.min(rect.left, window.innerWidth - ttWidth - 16);
     left = Math.max(8, left);
-    let top = rect.bottom + 8;
-    if (top + ttHeight > window.innerHeight) top = rect.top - ttHeight - 8;
+    // Show above tab to avoid WebContentsView overlap
+    let top = rect.top - ttHeight - 8;
+    if (top < 0) top = rect.bottom + 8;
     tabTooltip.style.left = left + 'px';
     tabTooltip.style.top = top + 'px';
   }, 400);

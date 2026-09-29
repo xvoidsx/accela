@@ -29,4 +29,8 @@ contextBridge.exposeInMainWorld('accela', {
   toggleVerticalTabs: () => ipcRenderer.invoke('toggle-vertical-tabs'),
   getVerticalTabs: () => ipcRenderer.invoke('get-vertical-tabs'),
   onTilingChanged: (cb) => ipcRenderer.on('tiling-changed', (e, d) => cb(d)),
+  onVerticalChanged: (cb) => ipcRenderer.on('vertical-changed', (e, v) => cb(v)),
+  openSettings: () => ipcRenderer.invoke('open-settings'),
+  showBlackiceMenu: () => ipcRenderer.invoke('show-blackice-menu'),
+  showTabMenu: (tabId, x, y) => ipcRenderer.invoke('show-tab-menu', { tabId, x, y }),
 });
