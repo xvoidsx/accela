@@ -363,6 +363,18 @@ addressBar.addEventListener('input', () => {
   }
 });
 
+// Vertical tabs collapse/expand
+let tabsCollapsed = false;
+document.getElementById('collapse-tabs-btn').addEventListener('click', () => {
+  tabsCollapsed = !tabsCollapsed;
+  document.body.classList.toggle('tabs-collapsed', tabsCollapsed);
+  document.getElementById('collapse-tabs-btn').style.display = document.body.classList.contains('vertical-tabs') ? 'block' : 'none';
+});
+// Show collapse button when vertical tabs are enabled
+window.accela.onVerticalChanged((v) => {
+  document.getElementById('collapse-tabs-btn').style.display = v ? 'block' : 'none';
+});
+
 // Tab hover tooltip (title + URL preview)
 let tabTooltip = null;
 let tooltipTimer = null;

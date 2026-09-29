@@ -330,3 +330,23 @@ body.vertical-tabs #toolbar { flex-shrink: 0; }
   justify-content: center;
 }
 body.vertical-tabs .tab.pinned { width: 100%; max-width: none; }
+
+/* Collapsed vertical tabs */
+body.vertical-tabs.tabs-collapsed #sidebar {
+  width: 48px !important;
+}
+body.vertical-tabs.tabs-collapsed .tab .tab-title {
+  display: none;
+}
+body.vertical-tabs.tabs-collapsed .tab {
+  justify-content: center;
+  padding: 8px 0;
+}
+#collapse-tabs-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 8px;
+}
+#collapse-tabs-btn:hover { color: #fff; }

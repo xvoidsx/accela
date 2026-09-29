@@ -125,6 +125,8 @@ function createWindow() {
     { label: 'File', submenu: [
       { label: 'New Tab', accelerator: 'CmdOrCtrl+T', click: () => createTab('accela://newtab') },
       { label: 'Close Tab', accelerator: 'CmdOrCtrl+W', click: () => { if (activeTabId) closeTab(activeTabId); } },
+      { label: 'Pin Tab', click: () => { if (activeTabId) { const t = tabs.get(activeTabId); if (t) { t.pinned = true; sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: tb.pinned, active: id === activeTabId }))); } } } },
+      { label: 'Unpin Tab', click: () => { if (activeTabId) { const t = tabs.get(activeTabId); if (t) { t.pinned = false; sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: tb.pinned, active: id === activeTabId }))); } } } },
       { type: 'separator' },
       { label: 'Quit', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() },
     ]},
@@ -292,7 +294,10 @@ function createTab(url) {
 
 function loadAccelaPage(view, accelaUrl) {
   if (accelaUrl === 'accela://settings') {
-    view.webContents.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
+    const settingsPath = path.join(__dirname, 'renderer', 'settings.html');
+    view.webContents.loadFile(settingsPath);
+    const t = tabs.get(tabId);
+    if (t) { t.url = 'accela://settings'; t.title = 'Settings'; }
     return;
   }
   if (accelaUrl === 'accela://newtab') {
