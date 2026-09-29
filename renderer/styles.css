@@ -18,3 +18,28 @@
   0% { transform: scale(1.2); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* Pinned tabs */
+.tab.pinned {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+.tab.pinned .tab-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2d95, #00ffff);
+  color: #0d0d14;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.vertical-tabs .tab.pinned {
+  width: 100%;
+  max-width: none;
+}

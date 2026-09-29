@@ -10,14 +10,23 @@ function renderTabs() {
   tabsEl.innerHTML = '';
   for (const [id, t] of tabs) {
     const el = document.createElement('div');
-    el.className = 'tab' + (id === activeTabId ? ' active' : '');
+    el.className = 'tab' + (id === activeTabId ? ' active' : '') + (t.pinned ? ' pinned' : '');
     el.dataset.id = id;
-    el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+    el.draggable = true;
+    if (t.pinned) {
+      // Pinned: icon only, no close button (use context menu to unpin/close)
+      const icon = (t.title || 'N')[0].toUpperCase();
+      el.innerHTML = `<span class="tab-icon">${escapeHtml(icon)}</span>`;
+      el.title = escapeHtml(t.title || 'New Tab');
+    } else {
+      el.innerHTML = `<span class="tab-title">${escapeHtml(t.title || 'New Tab')}</span><button class="tab-close"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+    }
     el.querySelector('.tab-title').parentElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('tab-close')) return;
       window.accela.switchTab(id);
     });
-    el.querySelector('.tab-close').addEventListener('click', (e) => {
+    const closeBtn = el.querySelector('.tab-close');
+    if (closeBtn) closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       window.accela.closeTab(id);
     });

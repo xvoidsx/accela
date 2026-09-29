@@ -278,7 +278,7 @@ function createTab(url) {
     sendToChrome('tab-updated', { tabId, canGoBack: view.webContents.canGoBack(), canGoForward: view.webContents.canGoForward() });
   });
 
-  tabs.set(tabId, { view, url, title: 'New Tab' });
+  tabs.set(tabId, { view, url, title: 'New Tab', pinned: false });
   mainWindow.contentView.addChildView(view);
   setActiveTab(tabId);
 
@@ -416,6 +416,25 @@ ipcMain.handle('toggle-vertical-tabs', () => {
   return verticalTabs;
 });
 ipcMain.handle('get-vertical-tabs', () => verticalTabs);
+ipcMain.handle('pin-tab', (e, tabId) => {
+  const t = tabs.get(tabId);
+  if (t) {
+    t.pinned = true;
+    // Move pinned tabs to front: rebuild map with pinned first
+    const entries = [...tabs.entries()];
+    entries.sort((a, b) => (b[1].pinned ? 1 : 0) - (a[1].pinned ? 1 : 0));
+    tabs.clear();
+    for (const [id, tab] of entries) tabs.set(id, tab);
+    sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: tb.pinned, active: id === activeTabId })));
+  }
+});
+ipcMain.handle('unpin-tab', (e, tabId) => {
+  const t = tabs.get(tabId);
+  if (t) {
+    t.pinned = false;
+    sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: tb.pinned, active: id === activeTabId })));
+  }
+});
 ipcMain.handle('open-settings', () => { createTab('accela://settings'); });
 ipcMain.handle('show-blackice-menu', () => {
   const { getStats } = require('./blackice/engine');
@@ -501,6 +520,14 @@ ipcMain.handle('show-tab-menu', (e, { tabId, x, y }) => {
   const menu = Menu.buildFromTemplate([
     { label: 'Reload', click: () => t.view.webContents.reload() },
     { label: 'Duplicate', click: () => createTab(t.url) },
+    { label: t.pinned ? 'Unpin tab' : 'Pin tab', click: () => {
+      t.pinned = !t.pinned;
+      const entries = [...tabs.entries()];
+      entries.sort((a, b) => (b[1].pinned ? 1 : 0) - (a[1].pinned ? 1 : 0));
+      tabs.clear();
+      for (const [id, tab] of entries) tabs.set(id, tab);
+      sendToChrome('tabs-changed', [...tabs.entries()].map(([id, tb]) => ({ id, url: tb.url, title: tb.title, pinned: tb.pinned, active: id === activeTabId })));
+    }},
     { type: 'separator' },
     { label: 'Tile with next tab', click: async () => {
       const ids = [...tabs.keys()];
@@ -553,7 +580,7 @@ ipcMain.handle('reorder-tab', (e, { fromId, toId }) => {
   }
 });
 ipcMain.handle('get-tabs', () => {
-  return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, active: id === activeTabId }));
+  return [...tabs.entries()].map(([id, t]) => ({ id: id, url: t.url, title: t.title, pinned: !!t.pinned, active: id === activeTabId }));
 });
 
 app.whenReady().then(() => {

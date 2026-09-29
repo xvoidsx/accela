@@ -33,4 +33,6 @@ contextBridge.exposeInMainWorld('accela', {
   openSettings: () => ipcRenderer.invoke('open-settings'),
   showBlackiceMenu: () => ipcRenderer.invoke('show-blackice-menu'),
   showTabMenu: (tabId, x, y) => ipcRenderer.invoke('show-tab-menu', { tabId, x, y }),
+  pinTab: (tabId) => ipcRenderer.invoke('pin-tab', tabId),
+  unpinTab: (tabId) => ipcRenderer.invoke('unpin-tab', tabId),
 });
