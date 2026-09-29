@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>New Tab — Accela</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+  }
+  .logo { width: 120px; filter: drop-shadow(0 0 40px rgba(255,16,240,.4)); }
+  h1 { font-size: 28px; font-weight: 300; letter-spacing: 8px; color: #ff10f0; }
+  .shortcuts { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 600px; }
+  .shortcut {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 20px 28px;
+    background: #0d0d14;
+    border: 1px solid #23232e;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: border-color .2s, transform .1s;
+    text-decoration: none; color: #fff;
+    font-size: 13px;
+  }
+  .shortcut:hover { border-color: #00ffff; transform: translateY(-2px); }
+  .shortcut .icon { font-size: 28px; }
+  .tagline { color: #00ffff; font-size: 13px; letter-spacing: 2px; opacity: .7; }
+</style>
+</head>
+<body>
+  <img class="logo" src="../icons/icon.png" alt="Accela">
+  <h1>ACCELA</h1>
+  <div class="tagline">THE WIRED, ACCELERATED</div>
+  <div class="shortcuts">
+    <a class="shortcut" href="https://neighborli.xyz"><span class="icon">🌐</span>neighborli</a>
+    <a class="shortcut" href="https://xvoidsx.github.io/navi-radio"><span class="icon">🎵</span>navi radio</a>
+    <a class="shortcut" href="https://app.glyyph.xyz"><span class="icon">📡</span>glyyph</a>
+    <a class="shortcut" href="https://xvoidsx.org"><span class="icon">∅</span>xvoidsx</a>
+  </div>
+</body>
+</html>
