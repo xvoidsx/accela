@@ -9,6 +9,8 @@ let mainWindow = null;
 const tabs = new Map(); // tabId -> { view, url, title }
 let activeTabId = null;
 let tabCounter = 0;
+let tiledTabIds = null; // [id1, id2] when tiling, null otherwise
+let verticalTabs = false;
 
 const CHROME_HEIGHT = 100; // tab strip + toolbar (measured)
 
@@ -52,6 +54,7 @@ function searchUrl(query) {
 }
 
 function createWindow() {
+  verticalTabs = !!loadSettings().verticalTabs;
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -240,14 +243,22 @@ function loadAccelaPage(view, accelaUrl) {
 function setActiveTab(tabId) {
   const t = tabs.get(tabId);
   if (!t) return;
-  // Hide all, show active
-  for (const [, tab] of tabs) {
-    tab.view.setVisible(false);
+  // If tiling, keep tiled views visible; otherwise hide all except active
+  if (tiledTabIds && tiledTabIds.includes(tabId)) {
+    // Switching within tiled views — keep both visible
+    activeTabId = tabId;
+  } else {
+    // Exit tiling when switching to non-tiled tab
+    tiledTabIds = null;
+    for (const [, tab] of tabs) {
+      tab.view.setVisible(false);
+    }
+    t.view.setVisible(true);
+    activeTabId = tabId;
   }
-  t.view.setVisible(true);
-  activeTabId = tabId;
   layoutViews();
   sendToChrome('tab-activated', { tabId, url: t.url, title: t.title });
+  sendToChrome('tiling-changed', { tiled: !!tiledTabIds, tabs: tiledTabIds });
 }
 
 function closeTab(tabId) {
@@ -271,9 +282,37 @@ function closeTab(tabId) {
 function layoutViews() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const bounds = mainWindow.getContentBounds();
-  const height = Math.max(0, bounds.height - CHROME_HEIGHT);
-  for (const [, t] of tabs) {
-    t.view.setBounds({ x: 0, y: CHROME_HEIGHT, width: bounds.width, height });
+  const chromeWidth = verticalTabs ? 220 : 0; // vertical tab strip width
+  const chromeTop = verticalTabs ? 48 : CHROME_HEIGHT; // toolbar height when vertical
+  const availWidth = bounds.width - chromeWidth;
+  const availHeight = Math.max(0, bounds.height - chromeTop);
+
+  if (tiledTabIds && tiledTabIds.length === 2) {
+    // Tiling: two views side by side
+    const [id1, id2] = tiledTabIds;
+    const t1 = tabs.get(id1), t2 = tabs.get(id2);
+    const halfW = Math.floor(availWidth / 2);
+    if (t1) {
+      t1.view.setVisible(true);
+      t1.view.setBounds({ x: chromeWidth, y: chromeTop, width: halfW, height: availHeight });
+    }
+    if (t2) {
+      t2.view.setVisible(true);
+      t2.view.setBounds({ x: chromeWidth + halfW, y: chromeTop, width: availWidth - halfW, height: availHeight });
+    }
+    // Hide others
+    for (const [id, t] of tabs) {
+      if (id !== id1 && id !== id2) t.view.setVisible(false);
+    }
+  } else {
+    // Normal: single active view
+    for (const [id, t] of tabs) {
+      const visible = id === activeTabId;
+      t.view.setVisible(visible);
+      if (visible) {
+        t.view.setBounds({ x: chromeWidth, y: chromeTop, width: availWidth, height: availHeight });
+      }
+    }
   }
 }
 
@@ -287,6 +326,29 @@ function sendToChrome(channel, data) {
 ipcMain.handle('new-tab', (e, url) => createTab(url || 'accela://newtab'));
 ipcMain.handle('close-tab', (e, tabId) => closeTab(tabId));
 ipcMain.handle('switch-tab', (e, tabId) => setActiveTab(tabId));
+ipcMain.handle('tile-tabs', (e, { leftId, rightId }) => {
+  if (tabs.has(leftId) && tabs.has(rightId) && leftId !== rightId) {
+    tiledTabIds = [leftId, rightId];
+    activeTabId = leftId;
+    layoutViews();
+    sendToChrome('tiling-changed', { tiled: true, tabs: tiledTabIds });
+  }
+});
+ipcMain.handle('untile-tabs', () => {
+  tiledTabIds = null;
+  layoutViews();
+  if (activeTabId) setActiveTab(activeTabId);
+  sendToChrome('tiling-changed', { tiled: false, tabs: null });
+});
+ipcMain.handle('toggle-vertical-tabs', () => {
+  verticalTabs = !verticalTabs;
+  layoutViews();
+  const s = loadSettings();
+  s.verticalTabs = verticalTabs;
+  saveSettings(s);
+  return verticalTabs;
+});
+ipcMain.handle('get-vertical-tabs', () => verticalTabs);
 ipcMain.handle('navigate', (e, { tabId, url }) => {
   const t = tabs.get(tabId || activeTabId);
   if (!t) return;

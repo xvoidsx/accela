@@ -24,4 +24,9 @@ contextBridge.exposeInMainWorld('accela', {
   onPageLoading: (cb) => ipcRenderer.on('page-loading', (e, loading) => cb(loading)),
   onTabsChanged: (cb) => ipcRenderer.on('tabs-changed', (e, tabs) => cb(tabs)),
   reorderTab: (fromId, toId) => ipcRenderer.invoke('reorder-tab', { fromId, toId }),
+  tileTabs: (leftId, rightId) => ipcRenderer.invoke('tile-tabs', { leftId, rightId }),
+  untileTabs: () => ipcRenderer.invoke('untile-tabs'),
+  toggleVerticalTabs: () => ipcRenderer.invoke('toggle-vertical-tabs'),
+  getVerticalTabs: () => ipcRenderer.invoke('get-vertical-tabs'),
+  onTilingChanged: (cb) => ipcRenderer.on('tiling-changed', (e, d) => cb(d)),
 });

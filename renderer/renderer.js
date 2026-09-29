@@ -226,6 +226,8 @@ document.getElementById('tabs').addEventListener('contextmenu', (e) => {
     <div class="cm-item" data-action="reload">Reload</div>
     <div class="cm-item" data-action="duplicate">Duplicate</div>
     <div class="cm-sep"></div>
+    <div class="cm-item" data-action="tile">Tile with another tab...</div>
+    <div class="cm-sep"></div>
     <div class="cm-item" data-action="close">Close tab</div>
     <div class="cm-item" data-action="close-others">Close other tabs</div>
   `;
@@ -244,6 +246,14 @@ document.getElementById('tabs').addEventListener('contextmenu', (e) => {
     else if (action === 'close-others') {
       const tabs = await window.accela.getTabs();
       for (const t of tabs) if (t.id !== tabId) window.accela.closeTab(t.id);
+    }
+    else if (action === 'tile') {
+      const tabs = await window.accela.getTabs();
+      const others = tabs.filter(t => t.id !== tabId);
+      if (others.length === 0) return;
+      // Simple picker: use first other tab, or prompt
+      const otherId = others[0].id;
+      await window.accela.tileTabs(tabId, otherId);
     }
     menu.remove();
   });
@@ -270,6 +280,31 @@ document.getElementById('tabs').addEventListener('drop', (e) => {
   }
   dragTabId = null;
 });
+
+// Vertical tabs toggle
+document.getElementById('vertical-tabs-btn').addEventListener('click', async () => {
+  const vt = await window.accela.toggleVerticalTabs();
+  document.body.classList.toggle('vertical-tabs', vt);
+});
+
+// Untile button
+document.getElementById('untile-btn').addEventListener('click', () => {
+  window.accela.untileTabs();
+});
+
+// Tiling indicator
+window.accela.onTilingChanged(({ tiled, tabs }) => {
+  document.body.classList.toggle('tiling', tiled);
+  const ind = document.getElementById('tiling-indicator');
+  if (ind) ind.style.display = tiled ? 'flex' : 'none';
+});
+
+// Vertical tabs toggle (in settings popup)
+async function initVerticalTabs() {
+  const vt = await window.accela.getVerticalTabs();
+  document.body.classList.toggle('vertical-tabs', vt);
+}
+initVerticalTabs();
 
 // Tab hover tooltip (title + URL preview)
 let tabTooltip = null;
